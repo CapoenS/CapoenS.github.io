@@ -9,7 +9,7 @@
 :root {
   /* --- Palette --- */
   --bg: #0c0f16;           /* deep-time backdrop */
-  --bg-raised: #141925;    /* panels, cards */
+  --bg-raised: #222A3C;    /* panels, cards (OLD: #141925)*/
   --ink: #e9e4d8;          /* warm bone-white text */
   --ink-dim: #9aa0ad;      /* secondary text */
   --line: #262d3d;         /* hairlines */
@@ -204,6 +204,7 @@ a { color: var(--accent); }
   text-overflow: ellipsis;
   cursor: pointer;
   transition: border-color 120ms ease, transform 120ms ease;
+  color: var(--ink);
 }
 .species-bar:hover { border-color: var(--accent); transform: translateY(-1px); }
 
