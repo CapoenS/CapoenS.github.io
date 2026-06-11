@@ -20,6 +20,14 @@ async function init() {
     showFatalError(err);
     return;
   }
+  
+  const lanes = document.getElementById("species-lanes");
+  const toggleBtn = document.getElementById("toggle-species");
+  toggleBtn.addEventListener("click", () => {
+    lanes.hidden = !lanes.hidden;
+    toggleBtn.textContent = lanes.hidden ? "Show species" : "Hide species";
+});
+  
   const { periods, species } = data;
 
   const periodPanel = new PeriodPanel(document.getElementById("period-panel"));
