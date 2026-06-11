@@ -44,6 +44,7 @@ a { color: var(--accent); }
 
 .site-header {
   padding: 48px clamp(16px, 5vw, 64px) 24px;
+  position: relative;
 }
 
 .eyebrow {
@@ -67,6 +68,17 @@ a { color: var(--accent); }
   max-width: 56ch;
   color: var(--ink-dim);
   margin: 10px 0 0;
+}
+
+/* View buttons (top-right column) */
+.view-buttons {
+  position: absolute;
+  top: 48px;
+  right: clamp(16px, 5vw, 64px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: stretch;
 }
 
 /* Controls row */
@@ -103,8 +115,6 @@ a { color: var(--accent); }
 
 .chip:hover, .btn-reset:hover { border-color: var(--accent); }
 .chip:active { transform: scale(0.97); }
-
-.btn-reset { margin-left: auto; color: var(--accent); }
 
 /* ============ Timeline ============ */
 
