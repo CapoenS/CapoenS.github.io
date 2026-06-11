@@ -337,6 +337,8 @@ a { color: var(--accent); }
   z-index: 100;
 }
 
+.modal-backdrop[hidden] { display: none; }
+
 .modal-card {
   position: relative;
   width: min(560px, 100%);
