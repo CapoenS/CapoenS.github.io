@@ -7,7 +7,7 @@
       "rank": "eon",
       "startMa": 4600,
       "endMa": 4000,
-      "color": "#AE2C87",
+      "color": "#342331",
       "info": {
         "atmosphere": "No free oxygen. A hot haze of carbon dioxide, water vapor, nitrogen and volcanic gases. Early on, possibly steam from a magma ocean.",
         "terrain": "Molten or freshly solidified crust, constant heavy bombardment by asteroids. The Moon forms from a giant impact early in this eon.",
@@ -22,7 +22,7 @@
       "rank": "eon",
       "startMa": 4000,
       "endMa": 2500,
-      "color": "#F0047F",
+      "color": "#D73F24",
       "info": {
         "atmosphere": "Still essentially oxygen-free: methane, CO2, nitrogen. The sky may have been orange with organic haze.",
         "terrain": "First stable continental cores (cratons) form. Global oceans, scattered volcanic islands.",
