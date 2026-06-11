@@ -1,0 +1,424 @@
+/* ============================================================
+   Deep Time — style.css
+   Design tokens first, then layout, then components.
+   Period band colors are NOT defined here: they come from
+   data/periods.json (official ICS geologic chart colors),
+   so the data file stays the single source of truth.
+   ============================================================ */
+
+:root {
+  /* --- Palette --- */
+  --bg: #0c0f16;           /* deep-time backdrop */
+  --bg-raised: #141925;    /* panels, cards */
+  --ink: #e9e4d8;          /* warm bone-white text */
+  --ink-dim: #9aa0ad;      /* secondary text */
+  --line: #262d3d;         /* hairlines */
+  --accent: #f0b95a;       /* amber: highlights, focus rings */
+
+  /* --- Type --- */
+  --font-display: "Fraunces", Georgia, serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* --- Timeline geometry --- */
+  --ribbon-height: 72px;
+  --lane-height: 30px;
+  --lane-gap: 6px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+a { color: var(--accent); }
+
+/* ============ Header ============ */
+
+.site-header {
+  padding: 48px clamp(16px, 5vw, 64px) 24px;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin: 0 0 4px;
+}
+
+.site-header h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2.4rem, 6vw, 4rem);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  max-width: 56ch;
+  color: var(--ink-dim);
+  margin: 10px 0 0;
+}
+
+/* Controls row */
+.controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.controls-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-dim);
+}
+
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.chip, .btn-reset {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 14px;
+  cursor: pointer;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+
+.chip:hover, .btn-reset:hover { border-color: var(--accent); }
+.chip:active { transform: scale(0.97); }
+
+.btn-reset { margin-left: auto; color: var(--accent); }
+
+/* ============ Timeline ============ */
+
+.timeline-section {
+  padding: 8px clamp(16px, 5vw, 64px) 0;
+}
+
+.timeline {
+  position: relative;
+  width: 100%;
+  user-select: none;
+  cursor: grab;
+}
+.timeline.dragging { cursor: grabbing; }
+
+/* --- Period ribbon (the strata) --- */
+.period-ribbon {
+  position: relative;
+  height: var(--ribbon-height);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+}
+
+.period-band {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  padding: 6px;
+  overflow: hidden;
+  cursor: pointer;
+  border-right: 1px solid rgba(0, 0, 0, 0.35);
+  transition: filter 120ms ease;
+}
+.period-band:hover { filter: brightness(1.18); }
+.period-band.focused { outline: 2px solid var(--ink); outline-offset: -2px; }
+
+.period-band .band-label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.78);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* --- Time axis --- */
+.time-axis {
+  position: relative;
+  height: 28px;
+  margin-top: 2px;
+}
+
+.axis-tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--ink-dim);
+  white-space: nowrap;
+}
+.axis-tick::before {
+  content: "";
+  display: block;
+  width: 1px;
+  height: 6px;
+  background: var(--ink-dim);
+  margin: 0 auto 3px;
+}
+
+/* --- Species lanes --- */
+.species-lanes {
+  position: relative;
+  margin-top: 6px;
+  min-height: 40px;
+}
+
+.species-bar {
+  position: absolute;
+  height: var(--lane-height);
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 4px;
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent); /* recolored per period by JS */
+  font-size: 0.8rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+.species-bar:hover { border-color: var(--accent); transform: translateY(-1px); }
+
+/* --- Present-day marker --- */
+.present-marker {
+  position: absolute;
+  top: -6px;
+  right: 0;
+  bottom: 0;
+  width: 2px;
+  background: var(--accent);
+  pointer-events: none;
+  opacity: 0.85;
+}
+.present-marker span {
+  position: absolute;
+  top: -16px;
+  right: 0;
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--accent);
+}
+
+.hint {
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+  margin: 14px 0 0;
+}
+
+/* ============ Period detail panel ============ */
+
+.period-panel {
+  margin: 32px clamp(16px, 5vw, 64px) 48px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-raised);
+  overflow: hidden;
+}
+
+.period-panel .panel-header {
+  padding: 24px 28px 18px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.period-panel h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.period-panel .panel-dates {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+}
+
+.panel-swatch {
+  width: 14px; height: 14px;
+  border-radius: 3px;
+  display: inline-block;
+  transform: translateY(1px);
+}
+
+.panel-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+@media (max-width: 760px) {
+  .panel-body { grid-template-columns: 1fr; }
+}
+
+.panel-facts { padding: 22px 28px; }
+
+.panel-facts dl { margin: 0; }
+.panel-facts dt {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-dim);
+  margin-top: 14px;
+}
+.panel-facts dt:first-child { margin-top: 0; }
+.panel-facts dd { margin: 4px 0 0; font-size: 0.92rem; }
+
+.panel-images {
+  padding: 22px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-left: 1px solid var(--line);
+}
+@media (max-width: 760px) { .panel-images { border-left: none; border-top: 1px solid var(--line); } }
+
+.panel-images img,
+.img-placeholder {
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+}
+
+.img-placeholder {
+  aspect-ratio: 16 / 9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--ink-dim);
+  background:
+    repeating-linear-gradient(-45deg, transparent 0 10px, rgba(255,255,255,0.03) 10px 20px),
+    var(--bg);
+}
+
+/* ============ Species modal ============ */
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 7, 11, 0.75);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+}
+
+.modal-card {
+  position: relative;
+  width: min(560px, 100%);
+  max-height: 86vh;
+  overflow-y: auto;
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.modal-close {
+  position: absolute;
+  top: 10px; right: 12px;
+  background: none;
+  border: none;
+  color: var(--ink-dim);
+  font-size: 1.6rem;
+  cursor: pointer;
+  line-height: 1;
+  z-index: 2;
+}
+.modal-close:hover { color: var(--ink); }
+
+.species-card-img img,
+.species-card-img .img-placeholder {
+  border-radius: 12px 12px 0 0;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  width: 100%;
+  display: block;
+}
+
+.species-card-body { padding: 22px 26px 26px; }
+
+.species-card-body h2 {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.7rem;
+  margin: 0;
+}
+
+.species-meta {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--ink-dim);
+  margin: 6px 0 14px;
+}
+
+.species-summary { font-size: 0.95rem; margin: 0 0 16px; }
+
+.species-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 16px;
+}
+.species-facts .fact b {
+  display: block;
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--ink-dim);
+}
+.species-facts .fact span { font-size: 0.88rem; }
+
+/* ============ Footer ============ */
+
+.site-footer {
+  padding: 24px clamp(16px, 5vw, 64px) 40px;
+  color: var(--ink-dim);
+  font-size: 0.82rem;
+  border-top: 1px solid var(--line);
+}
+
+/* ============ Accessibility ============ */
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; }
+}

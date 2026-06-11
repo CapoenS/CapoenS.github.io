@@ -1,10 +1,61 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>My GitHub Page</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deep Time — An Interactive Timeline of Life on Earth</title>
+  <meta name="description" content="Explore 4.6 billion years of Earth's history: geologic periods, ancient atmospheres, and the species that lived through them." />
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
-  <h1>Hello world!</h1>
-  <p>Test</p>
+
+  <header class="site-header">
+    <div class="title-block">
+      <p class="eyebrow">4,600,000,000 years, one ribbon</p>
+      <h1>Deep Time</h1>
+      <p class="subtitle">An interactive timeline of life on Earth. Scroll to zoom, drag to pan, click a stratum to focus on it, click a species to meet it.</p>
+    </div>
+    <div class="controls" role="toolbar" aria-label="Timeline controls">
+      <span class="controls-label">Jump to</span>
+      <div id="jump-chips" class="chips"><!-- filled by JS --></div>
+      <button id="reset-view" class="btn-reset" title="Zoom back out to all of Earth's history">Reset view</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- ====== The timeline itself ====== -->
+    <section class="timeline-section" aria-label="Geologic timeline">
+      <div id="timeline" class="timeline">
+        <div id="period-ribbon" class="period-ribbon" aria-label="Geologic periods"></div>
+        <div id="time-axis" class="time-axis"></div>
+        <div id="species-lanes" class="species-lanes" aria-label="Species lifespans"></div>
+        <div id="present-marker" class="present-marker" title="Present day"><span>now</span></div>
+      </div>
+      <p class="hint" id="timeline-hint">Tip: the Phanerozoic (the era of visible life) is only the last 12% of the ribbon — zoom in to find the dinosaurs.</p>
+    </section>
+
+    <!-- ====== Period detail panel (filled when a period is focused) ====== -->
+    <section id="period-panel" class="period-panel" hidden aria-live="polite"></section>
+  </main>
+
+  <!-- ====== Species card modal ====== -->
+  <div id="species-modal" class="modal-backdrop" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="species-modal-title">
+      <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+      <div id="species-modal-content"><!-- filled by JS --></div>
+    </div>
+  </div>
+
+  <footer class="site-footer">
+    <p>Built as a living document — species and periods are loaded from simple JSON files. <a href="https://github.com" rel="noopener">Add your own.</a></p>
+  </footer>
+
+  <script type="module" src="js/main.js"></script>
 </body>
 </html>

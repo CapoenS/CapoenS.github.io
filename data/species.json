@@ -1,0 +1,70 @@
+{
+  "_comment": "Each entry is one species (or genus). Times in Ma (million years ago). 'periodId' must match an id in periods.json — it colors the bar and links the card to its period. 'image' is relative to the site root; if the file is missing, a placeholder is shown. 'facts' is free-form: any key/value pairs you add will appear on the card. To add a species, copy a block and edit it.",
+  "species": [
+    {
+      "id": "stegosaurus",
+      "name": "Stegosaurus",
+      "group": "Plated dinosaur (thyreophoran)",
+      "startMa": 155,
+      "endMa": 145,
+      "periodId": "jurassic",
+      "image": "assets/images/species/stegosaurus.jpg",
+      "summary": "A bus-sized plant-eater with a double row of bony plates along its back and a spiked tail (the 'thagomizer') swung at predators like Allosaurus. Despite its size, its brain was about the size of a lime.",
+      "facts": {
+        "Length": "up to ~9 m",
+        "Diet": "Herbivore (low ferns, cycads)",
+        "Found in": "Western North America, Portugal",
+        "Fun fact": "Its plates may have flushed with blood for display or temperature control."
+      }
+    },
+    {
+      "id": "brachiosaurus",
+      "name": "Brachiosaurus",
+      "group": "Sauropod dinosaur",
+      "startMa": 154,
+      "endMa": 150,
+      "periodId": "jurassic",
+      "image": "assets/images/species/brachiosaurus.jpg",
+      "summary": "A giraffe-built giant: unlike most sauropods its front legs were longer than its hind legs, tilting its long neck upward to browse treetops over 12 m high that no other herbivore could reach.",
+      "facts": {
+        "Length": "~18–21 m",
+        "Weight": "~30–60 tonnes",
+        "Diet": "Herbivore (conifer crowns)",
+        "Found in": "Western North America"
+      }
+    },
+    {
+      "id": "triceratops",
+      "name": "Triceratops",
+      "group": "Horned dinosaur (ceratopsian)",
+      "startMa": 68,
+      "endMa": 66,
+      "periodId": "cretaceous",
+      "image": "assets/images/species/triceratops.jpg",
+      "summary": "A rhino-like herbivore with two meter-long brow horns and a broad bony frill. One of the very last non-avian dinosaurs — it lived right up to the asteroid impact, sharing its floodplains with T. rex.",
+      "facts": {
+        "Length": "~8–9 m",
+        "Weight": "~6–12 tonnes",
+        "Diet": "Herbivore (tough, low vegetation)",
+        "Found in": "Western North America"
+      }
+    },
+    {
+      "id": "tyrannosaurus-rex",
+      "name": "Tyrannosaurus rex",
+      "group": "Theropod dinosaur",
+      "startMa": 68,
+      "endMa": 66,
+      "periodId": "cretaceous",
+      "image": "assets/images/species/tyrannosaurus.jpg",
+      "summary": "The apex predator of Late Cretaceous North America, with the strongest bite of any land animal ever measured — enough to crush bone. Excellent eyesight and a surprisingly large brain made it a capable hunter, not just a scavenger.",
+      "facts": {
+        "Length": "~12 m",
+        "Weight": "~7–9 tonnes",
+        "Diet": "Carnivore",
+        "Bite force": "~35,000+ N",
+        "Found in": "Western North America"
+      }
+    }
+  ]
+}

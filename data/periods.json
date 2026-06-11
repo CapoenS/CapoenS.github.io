@@ -1,0 +1,230 @@
+{
+  "_comment": "Geologic time units, oldest first. Times are in Ma (million years ago). Colors follow the official ICS International Chronostratigraphic Chart. To add a unit: copy any entry and fill it in. 'info' fields are free-form — add or remove keys as you like, the panel renders whatever is present. 'images' paths are relative to the site root; missing images render as labeled placeholders.",
+  "units": [
+    {
+      "id": "hadean",
+      "name": "Hadean",
+      "rank": "eon",
+      "startMa": 4600,
+      "endMa": 4000,
+      "color": "#AE2C87",
+      "info": {
+        "atmosphere": "No free oxygen. A hot haze of carbon dioxide, water vapor, nitrogen and volcanic gases. Early on, possibly steam from a magma ocean.",
+        "terrain": "Molten or freshly solidified crust, constant heavy bombardment by asteroids. The Moon forms from a giant impact early in this eon.",
+        "flora": "None — no life known.",
+        "notable": "Oceans likely condense near the end of the eon."
+      },
+      "images": ["assets/images/periods/hadean.jpg"]
+    },
+    {
+      "id": "archean",
+      "name": "Archean",
+      "rank": "eon",
+      "startMa": 4000,
+      "endMa": 2500,
+      "color": "#F0047F",
+      "info": {
+        "atmosphere": "Still essentially oxygen-free: methane, CO2, nitrogen. The sky may have been orange with organic haze.",
+        "terrain": "First stable continental cores (cratons) form. Global oceans, scattered volcanic islands.",
+        "flora": "No plants, but life begins: single-celled prokaryotes and, later, photosynthesizing cyanobacteria building stromatolite mounds.",
+        "notable": "Oldest widely accepted fossils (~3.5 billion years) date from this eon."
+      },
+      "images": ["assets/images/periods/archean.jpg"]
+    },
+    {
+      "id": "proterozoic",
+      "name": "Proterozoic",
+      "rank": "eon",
+      "startMa": 2500,
+      "endMa": 538.8,
+      "color": "#F73563",
+      "info": {
+        "atmosphere": "The Great Oxidation Event (~2.4 billion years ago) introduces free oxygen, rusting the oceans' iron into banded iron formations.",
+        "terrain": "Continents grow and assemble into supercontinents (Columbia, Rodinia). At least two 'Snowball Earth' global glaciations.",
+        "flora": "Single cells dominate for most of the eon; complex eukaryotic cells and, at the very end, the first soft-bodied multicellular life (Ediacaran biota).",
+        "notable": "Roughly half of Earth's entire history fits inside this one eon."
+      },
+      "images": ["assets/images/periods/proterozoic.jpg"]
+    },
+    {
+      "id": "cambrian",
+      "name": "Cambrian",
+      "rank": "period",
+      "startMa": 538.8,
+      "endMa": 485.4,
+      "color": "#7FA056",
+      "info": {
+        "atmosphere": "Oxygen rising but still below modern levels; high CO2 and a greenhouse climate.",
+        "terrain": "Life is confined to the seas; the land is bare rock and microbial crusts. Continents scattered, Gondwana assembling.",
+        "flora": "Marine algae only — no land plants yet.",
+        "notable": "The Cambrian Explosion: almost every major animal body plan appears in the fossil record, including the first eyes and shells."
+      },
+      "images": ["assets/images/periods/cambrian.jpg"]
+    },
+    {
+      "id": "ordovician",
+      "name": "Ordovician",
+      "rank": "period",
+      "startMa": 485.4,
+      "endMa": 443.8,
+      "color": "#009270",
+      "info": {
+        "atmosphere": "Very high CO2, yet ending in a sharp ice age and mass extinction.",
+        "terrain": "Vast shallow seas flood the continents — prime real estate for reefs and trilobites.",
+        "flora": "First tiny non-vascular plants (liverwort-like) creep onto land.",
+        "notable": "Ends with the first of the 'Big Five' mass extinctions."
+      },
+      "images": ["assets/images/periods/ordovician.jpg"]
+    },
+    {
+      "id": "silurian",
+      "name": "Silurian",
+      "rank": "period",
+      "startMa": 443.8,
+      "endMa": 419.2,
+      "color": "#B3E1B6",
+      "info": {
+        "atmosphere": "Climate stabilizes and warms after the Ordovician ice age.",
+        "terrain": "Coral reefs expand; land is being colonized along rivers and coasts.",
+        "flora": "First vascular plants (like Cooksonia) stand a few centimeters tall.",
+        "notable": "First air-breathing animals on land: millipede-like arthropods."
+      },
+      "images": ["assets/images/periods/silurian.jpg"]
+    },
+    {
+      "id": "devonian",
+      "name": "Devonian",
+      "rank": "period",
+      "startMa": 419.2,
+      "endMa": 358.9,
+      "color": "#CB8C37",
+      "info": {
+        "atmosphere": "Warm greenhouse world; oxygen climbing as forests appear.",
+        "terrain": "The 'Age of Fishes' in the seas; on land, the first true forests and soils transform the landscape.",
+        "flora": "First trees (Archaeopteris) and first seed plants.",
+        "notable": "Fish grow limbs: tetrapods like Tiktaalik haul out of the water."
+      },
+      "images": ["assets/images/periods/devonian.jpg"]
+    },
+    {
+      "id": "carboniferous",
+      "name": "Carboniferous",
+      "rank": "period",
+      "startMa": 358.9,
+      "endMa": 298.9,
+      "color": "#67A599",
+      "info": {
+        "atmosphere": "Oxygen peaks around 30–35% — the highest in Earth's history — fueling giant insects.",
+        "terrain": "Endless tropical swamp forests whose buried remains become most of the world's coal.",
+        "flora": "Towering lycopod 'scale trees', horsetails and tree ferns.",
+        "notable": "Dragonflies with 70 cm wingspans; the first reptiles and the amniote egg."
+      },
+      "images": ["assets/images/periods/carboniferous.jpg"]
+    },
+    {
+      "id": "permian",
+      "name": "Permian",
+      "rank": "period",
+      "startMa": 298.9,
+      "endMa": 251.9,
+      "color": "#F04028",
+      "info": {
+        "atmosphere": "Drying and warming as the supercontinent Pangaea locks together; vast deserts in its interior.",
+        "terrain": "One supercontinent, one super-ocean (Panthalassa). Huge inland dunes and salt flats.",
+        "flora": "Seed ferns and early conifers replace the coal swamps.",
+        "notable": "Ends with the Great Dying — the worst mass extinction ever, erasing ~90% of marine species."
+      },
+      "images": ["assets/images/periods/permian.jpg"]
+    },
+    {
+      "id": "triassic",
+      "name": "Triassic",
+      "rank": "period",
+      "startMa": 251.9,
+      "endMa": 201.4,
+      "color": "#812B92",
+      "info": {
+        "atmosphere": "Hot and dry, with monsoon extremes. CO2 high, oxygen relatively low after the Great Dying.",
+        "terrain": "All land fused into Pangaea, centered on the equator. Vast red-rock deserts inland, conifer woodlands near coasts.",
+        "flora": "Conifers, cycads, ginkgoes and seed ferns. No grass, no flowers — the ground cover is ferns and horsetails.",
+        "notable": "Life rebuilds after the Great Dying. The first dinosaurs, first pterosaurs, first mammals and first turtles all appear here."
+      },
+      "images": ["assets/images/periods/triassic.jpg"]
+    },
+    {
+      "id": "jurassic",
+      "name": "Jurassic",
+      "rank": "period",
+      "startMa": 201.4,
+      "endMa": 145,
+      "color": "#34B2C9",
+      "info": {
+        "atmosphere": "Warm, humid greenhouse with no polar ice caps. CO2 several times modern levels.",
+        "terrain": "Pangaea splits apart; the young Atlantic Ocean opens. Shallow seas flood continental edges; lush vegetated lowlands.",
+        "flora": "Conifer forests with an understory of ferns, cycads and ginkgoes. Still no flowering plants.",
+        "notable": "The golden age of giant sauropods. First birds (Archaeopteryx) take wing late in the period."
+      },
+      "images": ["assets/images/periods/jurassic.jpg"]
+    },
+    {
+      "id": "cretaceous",
+      "name": "Cretaceous",
+      "rank": "period",
+      "startMa": 145,
+      "endMa": 66,
+      "color": "#7FC64E",
+      "info": {
+        "atmosphere": "Very warm for most of the period — crocodiles near the poles, sea levels up to 200 m higher than today.",
+        "terrain": "Continents drift toward familiar positions. Huge shallow seas split North America and Europe; chalk forms from plankton (hence the name).",
+        "flora": "The revolution: flowering plants appear and spread explosively, co-evolving with pollinating insects. Magnolias, figs and the first broadleaf forests.",
+        "notable": "Ends abruptly 66 million years ago when the Chicxulub asteroid strikes, ending the non-avian dinosaurs."
+      },
+      "images": ["assets/images/periods/cretaceous.jpg"]
+    },
+    {
+      "id": "paleogene",
+      "name": "Paleogene",
+      "rank": "period",
+      "startMa": 66,
+      "endMa": 23.03,
+      "color": "#FD9A52",
+      "info": {
+        "atmosphere": "Starts hot (a major temperature spike ~56 Ma), then a long cooling trend; Antarctica freezes over near the end.",
+        "terrain": "India crashes into Asia and the Himalayas begin to rise. Dense forests reach high latitudes early on.",
+        "flora": "Flowering plants and tropical forests dominate; grasses exist but grasslands are not yet widespread.",
+        "notable": "Mammals inherit the Earth: whales return to the sea, bats take to the air, primates take to the trees."
+      },
+      "images": ["assets/images/periods/paleogene.jpg"]
+    },
+    {
+      "id": "neogene",
+      "name": "Neogene",
+      "rank": "period",
+      "startMa": 23.03,
+      "endMa": 2.58,
+      "color": "#FFE619",
+      "info": {
+        "atmosphere": "Cooling and drying continues; CO2 drops toward modern values.",
+        "terrain": "Continents essentially in modern positions. Grasslands and savannas spread across the world for the first time.",
+        "flora": "The age of grass. Open savannas reshape evolution — grazers get tall teeth, predators get fast.",
+        "notable": "Apes diversify; hominins split from chimpanzees and begin walking upright in Africa."
+      },
+      "images": ["assets/images/periods/neogene.jpg"]
+    },
+    {
+      "id": "quaternary",
+      "name": "Quaternary",
+      "rank": "period",
+      "startMa": 2.58,
+      "endMa": 0,
+      "color": "#F9F97F",
+      "info": {
+        "atmosphere": "Ice-age world: CO2 and temperature swing with glacial cycles every ~100,000 years.",
+        "terrain": "Ice sheets repeatedly bury the northern continents, sea levels rise and fall by over 100 m, carving today's landscapes.",
+        "flora": "Modern flora; tundra and steppe expand during glacials, forests during interglacials.",
+        "notable": "Homo sapiens appears (~300,000 years ago), spreads worldwide, and starts building timelines about it."
+      },
+      "images": ["assets/images/periods/quaternary.jpg"]
+    }
+  ]
+}
