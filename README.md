@@ -1,12 +1,6 @@
 # Deep Time — an interactive timeline of life on Earth
 
-A static website (plain HTML/CSS/JS, no build step, no dependencies) that shows
-4.6 billion years of Earth's history as an interactive ribbon. Click a geologic
-period to focus on it and read about its atmosphere, terrain and flora; click a
-species bar to open its card.
-
-Built to be hosted for free on **GitHub Pages** and to be **easily expandable**:
-all content lives in two JSON files.
+Description ...
 
 ---
 
@@ -30,44 +24,6 @@ all content lives in two JSON files.
         ├── periods/        # landscape images per period (jpg)
         └── species/        # one image per species (jpg)
 ```
-
-**Design rule:** code never contains content. To grow the site you edit
-`data/*.json` and drop images into `assets/images/` — you should rarely need
-to touch the JS.
-
----
-
-## Run it locally
-
-Browsers block `fetch()` of local files, so don't open `index.html` directly —
-serve the folder instead (any static server works):
-
-```bash
-# from the project root, pick one:
-python3 -m http.server 8000      # then open http://localhost:8000
-npx serve .                      # if you have Node installed
-```
-
-## Deploy on GitHub Pages
-
-1. Create a new repository on GitHub (e.g. `earth-timeline`).
-2. Push this folder to it:
-   ```bash
-   git init
-   git add .
-   git commit -m "Initial version: interactive Earth history timeline"
-   git branch -M main
-   git remote add origin https://github.com/<your-username>/earth-timeline.git
-   git push -u origin main
-   ```
-3. On GitHub: **Settings → Pages → Source: Deploy from a branch →
-   Branch: `main` / folder: `/ (root)` → Save**.
-4. After a minute your site is live at
-   `https://<your-username>.github.io/earth-timeline/`.
-
-Every future `git push` updates the live site automatically.
-
----
 
 ## Adding a species
 
@@ -116,8 +72,11 @@ just hex values you can change.
 - Filtering species by group (dinosaurs / mammals / marine ...).
 - A search box that calls `timeline.setView()` on the match.
 - URL state (`#view=155,145`) so views can be shared.
+- 3D interactive world map view per period
+- Images of periods and species
+- More view controls
+- Sound clips of dinosaurs or atmospheric period sounds
 
 ## Image credits
 
-Add your image sources here as you add pictures (Wikimedia Commons is a good
-source of freely licensed paleoart — check each file's license).
+...
