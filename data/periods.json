@@ -1,5 +1,5 @@
 {
-  "_comment": "Geologic time units, oldest first. Times are in Ma (million years ago). Colors follow the official ICS International Chronostratigraphic Chart. To add a unit: copy any entry and fill it in. 'info' fields are free-form — add or remove keys as you like, the panel renders whatever is present. 'images' paths are relative to the site root; missing images render as labeled placeholders.",
+  "_comment": "Geologic time units, oldest first. Times are in Ma (million years ago). Units form a hierarchy by 'rank' (eon > era > period) linked via 'parentId'. The timeline renders one stacked row per rank. Colors of Phanerozoic units follow the official ICS International Chronostratigraphic Chart; Precambrian sub-unit colors are approximate ICS-family tints. 'overview' is a longer free-text introduction shown as a main paragraph above the detailed facts; omit it to hide that section. 'info' fields are free-form — add or remove keys as you like, the panel renders whatever is present. 'images' paths are relative to the site root; missing images render as labeled placeholders. Optional 'background' (image path) and 'audio' (looping track path, e.g. assets/audio/<id>.mp3) drive the immersive page background and ambient sound when a unit is focused; both are optional and inherit from the parent unit when omitted (background also falls back to images[0], then to a color gradient; audio falls back to silence). To add a unit: copy any entry, set its 'rank' and 'parentId', and fill it in.",
   "units": [
     {
       "id": "hadean",
@@ -7,7 +7,8 @@
       "rank": "eon",
       "startMa": 4600,
       "endMa": 4000,
-      "color": "#342331",
+      "color": "#B23A22",
+      "overview": "Hadean overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
       "info": {
         "atmosphere": "No free oxygen. A hot haze of carbon dioxide, water vapor, nitrogen and volcanic gases. Early on, possibly steam from a magma ocean.",
         "terrain": "Molten or freshly solidified crust, constant heavy bombardment by asteroids. The Moon forms from a giant impact early in this eon.",
@@ -22,7 +23,8 @@
       "rank": "eon",
       "startMa": 4000,
       "endMa": 2500,
-      "color": "#D73F24",
+      "color": "#C2682B",
+      "overview": "Archean overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
       "info": {
         "atmosphere": "Still essentially oxygen-free: methane, CO2, nitrogen. The sky may have been orange with organic haze.",
         "terrain": "First stable continental cores (cratons) form. Global oceans, scattered volcanic islands.",
@@ -32,12 +34,72 @@
       "images": ["assets/images/periods/archean.jpg"]
     },
     {
+      "id": "eoarchean",
+      "name": "Eoarchean",
+      "rank": "era",
+      "parentId": "archean",
+      "startMa": 4000,
+      "endMa": 3600,
+      "color": "#A85A22",
+      "overview": "Eoarchean overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "info": {
+        "notable": "Earliest era of the Archean; some of the oldest known rocks and possible traces of life."
+      },
+      "images": []
+    },
+    {
+      "id": "paleoarchean",
+      "name": "Paleoarchean",
+      "rank": "era",
+      "parentId": "archean",
+      "startMa": 3600,
+      "endMa": 3200,
+      "color": "#BC6A28",
+      "overview": "Paleoarchean overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "info": {
+        "notable": "Oldest well-preserved microfossils and stromatolites date from this era."
+      },
+      "images": []
+    },
+    {
+      "id": "mesoarchean",
+      "name": "Mesoarchean",
+      "rank": "era",
+      "parentId": "archean",
+      "startMa": 3200,
+      "endMa": 2800,
+      "color": "#CE7C30",
+      "overview": "Mesoarchean overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "info": {
+        "notable": "Continental crust grows; widespread stromatolite reefs."
+      },
+      "images": []
+    },
+    {
+      "id": "neoarchean",
+      "name": "Neoarchean",
+      "rank": "era",
+      "parentId": "archean",
+      "startMa": 2800,
+      "endMa": 2500,
+      "color": "#DE9038",
+      "overview": "Neoarchean overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "info": {
+        "notable": "Oxygenic photosynthesis well underway, setting the stage for the Great Oxidation Event."
+      },
+      "images": []
+    },
+
+
+    {
       "id": "proterozoic",
       "name": "Proterozoic",
       "rank": "eon",
       "startMa": 2500,
       "endMa": 538.8,
-      "color": "#6B7A34",
+      "color": "#2C8C84",
+      "audio": "assets/audio/proterozoic.ogg",
+      "overview": "Proterozoic overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
       "info": {
         "atmosphere": "The Great Oxidation Event (~2.4 billion years ago) introduces free oxygen, rusting the oceans' iron into banded iron formations.",
         "terrain": "Continents grow and assemble into supercontinents (Columbia, Rodinia). At least two 'Snowball Earth' global glaciations.",
@@ -47,12 +109,238 @@
       "images": ["assets/images/periods/proterozoic.jpg"]
     },
     {
+      "id": "paleoproterozoic",
+      "name": "Paleoproterozoic",
+      "rank": "era",
+      "parentId": "proterozoic",
+      "startMa": 2500,
+      "endMa": 1600,
+      "color": "#2A7C86",
+      "overview": "Paleoproterozoic overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "info": {
+        "notable": "The Great Oxidation Event and the first supercontinent (Columbia) fall in this era."
+      },
+      "images": []
+    },
+    {
+      "id": "mesoproterozoic",
+      "name": "Mesoproterozoic",
+      "rank": "era",
+      "parentId": "proterozoic",
+      "startMa": 1600,
+      "endMa": 1000,
+      "color": "#2E8C80",
+      "overview": "Mesoproterozoic overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "info": {
+        "notable": "Supercontinent Rodinia assembles; eukaryotic life diversifies."
+      },
+      "images": []
+    },
+    {
+      "id": "neoproterozoic",
+      "name": "Neoproterozoic",
+      "rank": "era",
+      "parentId": "proterozoic",
+      "startMa": 1000,
+      "endMa": 538.8,
+      "color": "#3C9C84",
+      "overview": "Neoproterozoic overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "info": {
+        "notable": "Snowball Earth glaciations and the first complex multicellular life (Ediacaran biota)."
+      },
+      "images": []
+    },
+    {
+      "id": "siderian",
+      "name": "Siderian",
+      "rank": "period",
+      "parentId": "paleoproterozoic",
+      "startMa": 2500,
+      "endMa": 2300,
+      "color": "#246C76",
+      "overview": "Siderian overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "info": { "notable": "Banded iron formations peak as oxygen rusts the oceans." },
+      "images": []
+    },
+    {
+      "id": "rhyacian",
+      "name": "Rhyacian",
+      "rank": "period",
+      "parentId": "paleoproterozoic",
+      "startMa": 2300,
+      "endMa": 2050,
+      "color": "#2A7682",
+      "overview": "Rhyacian overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "info": { "notable": "The Huronian glaciation, one of the longest ice ages in Earth's history." },
+      "images": []
+    },
+    {
+      "id": "orosirian",
+      "name": "Orosirian",
+      "rank": "period",
+      "parentId": "paleoproterozoic",
+      "startMa": 2050,
+      "endMa": 1800,
+      "color": "#30808C",
+      "overview": "Orosirian overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "info": { "notable": "Intense mountain building and large asteroid impacts." },
+      "images": []
+    },
+    {
+      "id": "statherian",
+      "name": "Statherian",
+      "rank": "period",
+      "parentId": "paleoproterozoic",
+      "startMa": 1800,
+      "endMa": 1600,
+      "color": "#388C97",
+      "overview": "Statherian overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "info": { "notable": "Supercontinent Columbia stabilizes; first eukaryotic cells appear." },
+      "images": []
+    },
+    {
+      "id": "calymmian",
+      "name": "Calymmian",
+      "rank": "period",
+      "parentId": "mesoproterozoic",
+      "startMa": 1600,
+      "endMa": 1400,
+      "color": "#2A8276",
+      "overview": "Calymmian overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "info": { "notable": "Expansion of platform covers as Columbia breaks up." },
+      "images": []
+    },
+    {
+      "id": "ectasian",
+      "name": "Ectasian",
+      "rank": "period",
+      "parentId": "mesoproterozoic",
+      "startMa": 1400,
+      "endMa": 1200,
+      "color": "#318C7E",
+      "overview": "Ectasian overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "info": { "notable": "Earliest known sexually reproducing organisms." },
+      "images": []
+    },
+    {
+      "id": "stenian",
+      "name": "Stenian",
+      "rank": "period",
+      "parentId": "mesoproterozoic",
+      "startMa": 1200,
+      "endMa": 1000,
+      "color": "#389688",
+      "overview": "Stenian overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "info": { "notable": "Supercontinent Rodinia forms along narrow metamorphic belts." },
+      "images": []
+    },
+    {
+      "id": "tonian",
+      "name": "Tonian",
+      "rank": "period",
+      "parentId": "neoproterozoic",
+      "startMa": 1000,
+      "endMa": 720,
+      "color": "#349281",
+      "overview": "Tonian overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "info": { "notable": "Rodinia begins to rift apart; first possible animals (sponges)." },
+      "images": []
+    },
+    {
+      "id": "cryogenian",
+      "name": "Cryogenian",
+      "rank": "period",
+      "parentId": "neoproterozoic",
+      "startMa": 720,
+      "endMa": 635,
+      "color": "#3E9E88",
+      "overview": "Cryogenian overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "info": { "notable": "The most severe 'Snowball Earth' glaciations, ice possibly reaching the equator." },
+      "images": []
+    },
+    {
+      "id": "ediacaran",
+      "name": "Ediacaran",
+      "rank": "period",
+      "parentId": "neoproterozoic",
+      "startMa": 635,
+      "endMa": 538.8,
+      "color": "#48A88D",
+      "overview": "Ediacaran overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+      "info": { "notable": "The Ediacaran biota: Earth's first large, soft-bodied multicellular life." },
+      "images": []
+    },
+
+
+    {
+      "id": "phanerozoic",
+      "name": "Phanerozoic",
+      "rank": "eon",
+      "startMa": 538.8,
+      "endMa": 0,
+      "color": "#3E8E55",
+      "overview": "Phanerozoic overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.",
+      "info": {
+        "atmosphere": "Oxygen-rich, supporting large animals and, eventually, fire.",
+        "terrain": "The eon of 'visible life' — continents drift into modern positions; life colonizes and transforms the land.",
+        "flora": "From the first land plants to flowering forests and grasslands.",
+        "notable": "Spans the Paleozoic, Mesozoic and Cenozoic — the last ~12% of Earth's history, holding nearly all familiar fossils."
+      },
+      "images": []
+    },
+    {
+      "id": "paleozoic",
+      "name": "Paleozoic",
+      "rank": "era",
+      "parentId": "phanerozoic",
+      "startMa": 538.8,
+      "endMa": 251.9,
+      "color": "#389362",
+      "overview": "Paleozoic overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "info": {
+        "notable": "'Old life': from the Cambrian Explosion to the colonization of land, ending with the Permian 'Great Dying'."
+      },
+      "images": []
+    },
+    {
+      "id": "mesozoic",
+      "name": "Mesozoic",
+      "rank": "era",
+      "parentId": "phanerozoic",
+      "startMa": 251.9,
+      "endMa": 66,
+      "color": "#6F8C46",
+      "audio": "assets/audio/mesozoic.ogg",
+      "overview": "Mesozoic overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "info": {
+        "notable": "The 'age of reptiles' and dinosaurs, ending with the Chicxulub asteroid impact 66 Ma."
+      },
+      "images": ["assets/images/periods/mesozoic.jpg"]
+    },
+    {
+      "id": "cenozoic",
+      "name": "Cenozoic",
+      "rank": "era",
+      "parentId": "phanerozoic",
+      "startMa": 66,
+      "endMa": 0,
+      "color": "#C8A52E",
+      "overview": "Cenozoic overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.",
+      "info": {
+        "notable": "The 'age of mammals' (and, late in the era, humans)."
+      },
+      "images": []
+    },
+    {
       "id": "cambrian",
       "name": "Cambrian",
       "rank": "period",
+      "parentId": "paleozoic",
       "startMa": 538.8,
       "endMa": 485.4,
-      "color": "#7FA056",
+      "color": "#2F9372",
+      "background": "assets/images/periods/cambrian.jpg",
+      "overview": "Cambrian overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
       "info": {
         "atmosphere": "Oxygen rising but still below modern levels; high CO2 and a greenhouse climate.",
         "terrain": "Life is confined to the seas; the land is bare rock and microbial crusts. Continents scattered, Gondwana assembling.",
@@ -65,9 +353,11 @@
       "id": "ordovician",
       "name": "Ordovician",
       "rank": "period",
+      "parentId": "paleozoic",
       "startMa": 485.4,
       "endMa": 443.8,
-      "color": "#009270",
+      "color": "#3A9670",
+      "overview": "Ordovician overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
       "info": {
         "atmosphere": "Very high CO2, yet ending in a sharp ice age and mass extinction.",
         "terrain": "Vast shallow seas flood the continents — prime real estate for reefs and trilobites.",
@@ -80,9 +370,11 @@
       "id": "silurian",
       "name": "Silurian",
       "rank": "period",
+      "parentId": "paleozoic",
       "startMa": 443.8,
       "endMa": 419.2,
-      "color": "#B3E1B6",
+      "color": "#449860",
+      "overview": "Silurian overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
       "info": {
         "atmosphere": "Climate stabilizes and warms after the Ordovician ice age.",
         "terrain": "Coral reefs expand; land is being colonized along rivers and coasts.",
@@ -95,9 +387,11 @@
       "id": "devonian",
       "name": "Devonian",
       "rank": "period",
+      "parentId": "paleozoic",
       "startMa": 419.2,
       "endMa": 358.9,
-      "color": "#CB8C37",
+      "color": "#4D9C52",
+      "overview": "Devonian overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
       "info": {
         "atmosphere": "Warm greenhouse world; oxygen climbing as forests appear.",
         "terrain": "The 'Age of Fishes' in the seas; on land, the first true forests and soils transform the landscape.",
@@ -110,9 +404,11 @@
       "id": "carboniferous",
       "name": "Carboniferous",
       "rank": "period",
+      "parentId": "paleozoic",
       "startMa": 358.9,
       "endMa": 298.9,
-      "color": "#67A599",
+      "color": "#549E48",
+      "overview": "Carboniferous overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
       "info": {
         "atmosphere": "Oxygen peaks around 30–35% — the highest in Earth's history — fueling giant insects.",
         "terrain": "Endless tropical swamp forests whose buried remains become most of the world's coal.",
@@ -125,9 +421,11 @@
       "id": "permian",
       "name": "Permian",
       "rank": "period",
+      "parentId": "paleozoic",
       "startMa": 298.9,
       "endMa": 251.9,
-      "color": "#F04028",
+      "color": "#5A9C40",
+      "overview": "Permian overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
       "info": {
         "atmosphere": "Drying and warming as the supercontinent Pangaea locks together; vast deserts in its interior.",
         "terrain": "One supercontinent, one super-ocean (Panthalassa). Huge inland dunes and salt flats.",
@@ -140,9 +438,11 @@
       "id": "triassic",
       "name": "Triassic",
       "rank": "period",
+      "parentId": "mesozoic",
       "startMa": 251.9,
       "endMa": 201.4,
-      "color": "#812B92",
+      "color": "#4E8C40",
+      "overview": "Triassic overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
       "info": {
         "atmosphere": "Hot and dry, with monsoon extremes. CO2 high, oxygen relatively low after the Great Dying.",
         "terrain": "All land fused into Pangaea, centered on the equator. Vast red-rock deserts inland, conifer woodlands near coasts.",
@@ -155,9 +455,12 @@
       "id": "jurassic",
       "name": "Jurassic",
       "rank": "period",
+      "parentId": "mesozoic",
       "startMa": 201.4,
       "endMa": 145,
-      "color": "#34B2C9",
+      "color": "#729050",
+      "background": "assets/images/periods/jurassic.jpg",
+      "overview": "Jurassic overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
       "info": {
         "atmosphere": "Warm, humid greenhouse with no polar ice caps. CO2 several times modern levels.",
         "terrain": "Pangaea splits apart; the young Atlantic Ocean opens. Shallow seas flood continental edges; lush vegetated lowlands.",
@@ -170,9 +473,11 @@
       "id": "cretaceous",
       "name": "Cretaceous",
       "rank": "period",
+      "parentId": "mesozoic",
       "startMa": 145,
       "endMa": 66,
-      "color": "#7FC64E",
+      "color": "#95884A",
+      "overview": "Cretaceous overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
       "info": {
         "atmosphere": "Very warm for most of the period — crocodiles near the poles, sea levels up to 200 m higher than today.",
         "terrain": "Continents drift toward familiar positions. Huge shallow seas split North America and Europe; chalk forms from plankton (hence the name).",
@@ -185,9 +490,11 @@
       "id": "paleogene",
       "name": "Paleogene",
       "rank": "period",
+      "parentId": "cenozoic",
       "startMa": 66,
       "endMa": 23.03,
-      "color": "#FD9A52",
+      "color": "#BD9E2E",
+      "overview": "Paleogene overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
       "info": {
         "atmosphere": "Starts hot (a major temperature spike ~56 Ma), then a long cooling trend; Antarctica freezes over near the end.",
         "terrain": "India crashes into Asia and the Himalayas begin to rise. Dense forests reach high latitudes early on.",
@@ -200,9 +507,11 @@
       "id": "neogene",
       "name": "Neogene",
       "rank": "period",
+      "parentId": "cenozoic",
       "startMa": 23.03,
       "endMa": 2.58,
-      "color": "#FFE619",
+      "color": "#D2B53C",
+      "overview": "Neogene overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
       "info": {
         "atmosphere": "Cooling and drying continues; CO2 drops toward modern values.",
         "terrain": "Continents essentially in modern positions. Grasslands and savannas spread across the world for the first time.",
@@ -215,9 +524,11 @@
       "id": "quaternary",
       "name": "Quaternary",
       "rank": "period",
+      "parentId": "cenozoic",
       "startMa": 2.58,
       "endMa": 0,
-      "color": "#F9F97F",
+      "color": "#E6CE54",
+      "overview": "Quaternary overview — Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.",
       "info": {
         "atmosphere": "Ice-age world: CO2 and temperature swing with glacial cycles every ~100,000 years.",
         "terrain": "Ice sheets repeatedly bury the northern continents, sea levels rise and fall by over 100 m, carving today's landscapes.",

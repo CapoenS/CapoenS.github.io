@@ -9,6 +9,8 @@
 const DATA_FILES = {
   periods: "data/periods.json",
   species: "data/species.json",
+  events: "data/events.json",
+  sources: "data/sources.json",
 };
 
 /** Fetch one JSON file, throwing a readable error if it fails. */
@@ -21,11 +23,22 @@ async function fetchJson(path) {
   return res.json();
 }
 
-/** Load everything the app needs. Returns { periods, species }. */
+/** Fetch optional JSON; returns null (not an error) if the file is missing. */
+async function fetchOptionalJson(path) {
+  try {
+    return await fetchJson(path);
+  } catch (_) {
+    return null;
+  }
+}
+
+/** Load everything the app needs. Returns { periods, species, events, sources }. */
 export async function loadData() {
-  const [periodsRaw, speciesRaw] = await Promise.all([
+  const [periodsRaw, speciesRaw, eventsRaw, sourcesRaw] = await Promise.all([
     fetchJson(DATA_FILES.periods),
     fetchJson(DATA_FILES.species),
+    fetchOptionalJson(DATA_FILES.events),  // optional — app works without it
+    fetchOptionalJson(DATA_FILES.sources), // optional — app works without it
   ]);
 
   const periods = (periodsRaw.units ?? [])
@@ -38,7 +51,13 @@ export async function loadData() {
     .filter((s) => validateSpecies(s, periodIds))
     .sort((a, b) => b.startMa - a.startMa);
 
-  return { periods, species };
+  const events = (eventsRaw?.events ?? [])
+    .filter(validateEvent)
+    .sort((a, b) => b.ma - a.ma);
+
+  const sources = (sourcesRaw?.categories ?? []).filter((c) => c.label);
+
+  return { periods, species, events, sources };
 }
 
 /* ---------- validation: warn (don't crash) on bad entries ---------- */
@@ -59,6 +78,12 @@ function validateSpecies(s, periodIds) {
     console.warn(`[data] Species "${s.id}" references unknown periodId "${s.periodId}" — it will use the default color.`);
   }
   return true;
+}
+
+function validateEvent(e) {
+  const ok = e.id && e.name && isFiniteNum(e.ma);
+  if (!ok) console.warn("[data] Skipping invalid event entry:", e);
+  return ok;
 }
 
 function isFiniteNum(n) {

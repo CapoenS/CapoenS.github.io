@@ -1,0 +1,201 @@
+/**
+ * me.css — layout for the personal page (me.html).
+ * Builds on the design tokens (:root) and base body from style.css.
+ */
+
+.me-page {
+  background: var(--bg); /* solid, no immersive stage on this page */
+}
+
+.me-nav {
+  padding: 24px clamp(16px, 5vw, 64px) 0;
+}
+.me-back {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--ink-dim);
+  text-decoration: none;
+}
+.me-back:hover { color: var(--accent); }
+
+.me-main {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px clamp(16px, 5vw, 64px) 64px;
+}
+
+/* ---- Hero ---- */
+.me-hero {
+  display: flex;
+  gap: 28px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 24px 0 16px;
+}
+.me-photo {
+  width: 132px;
+  height: 132px;
+  flex: 0 0 auto;
+  position: relative;
+}
+.me-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+}
+.me-photo-fallback {
+  display: none; /* shown by onerror when the photo is missing */
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 2px solid var(--line);
+  background: var(--bg-raised);
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.me-intro { flex: 1 1 280px; }
+.me-intro h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2rem, 5vw, 3rem);
+  margin: 2px 0 4px;
+  letter-spacing: -0.01em;
+}
+.me-role {
+  font-weight: 600;
+  margin: 0 0 6px;
+}
+.me-tagline {
+  color: var(--ink-dim);
+  margin: 0 0 14px;
+  max-width: 52ch;
+}
+.me-quick-links {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+}
+
+/* ---- Sections ---- */
+.me-section {
+  margin-top: 44px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.me-section h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin: 0 0 16px;
+}
+
+/* ---- Skills tags ---- */
+.me-tags {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.me-tags li {
+  font-size: 0.85rem;
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+
+/* ---- Experience ---- */
+.me-experience {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+.me-experience li {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 16px;
+}
+.me-exp-when {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--ink-dim);
+  padding-top: 3px;
+}
+.me-exp-what h3 { margin: 0 0 4px; font-size: 1.05rem; }
+.me-exp-what h3 span { color: var(--ink-dim); font-weight: 500; }
+.me-exp-what p { margin: 0; color: var(--ink-dim); }
+
+/* ---- Project cards ---- */
+.me-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+.me-card {
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px 20px;
+}
+.me-card h3 { margin: 0 0 8px; font-size: 1.05rem; }
+.me-card p { margin: 0 0 12px; color: var(--ink-dim); font-size: 0.92rem; }
+.me-card a {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+.me-card a:hover { text-decoration: underline; }
+
+/* ---- Achievements list ---- */
+.me-list {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ---- Contact ---- */
+.me-contact-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+.me-btn {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--bg-raised);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px 18px;
+  text-decoration: none;
+  transition: border-color 120ms ease, transform 120ms ease;
+}
+.me-btn:hover { border-color: var(--accent); }
+.me-btn:active { transform: scale(0.98); }
+.me-btn.primary {
+  background: var(--accent);
+  color: #1a1205;
+  border-color: var(--accent);
+}
+
+@media (max-width: 560px) {
+  .me-experience li { grid-template-columns: 1fr; gap: 4px; }
+}

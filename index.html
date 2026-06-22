@@ -12,8 +12,42 @@
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="css/style.css" />
+
+  <!-- d3 for globe projection (loaded before the module so Globe can use it as a global) -->
+  <script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js"></script>
+  <!-- Baked paleogeographic fallbacks (globals: window.AE_BAKED_105, window.CRETACEOUS, window.PANGAEA) -->
+  <script src="js/geo/ae-baked-105.js"></script>
+  <script src="js/geo/cretaceous-geo.js"></script>
+  <script src="js/geo/pangaea-geo.js"></script>
 </head>
 <body>
+
+  <nav class="topbar" aria-label="Site">
+    <a class="topbar-brand" href="index.html">
+      <span class="topbar-logo" aria-hidden="true">DT<img src="assets/images/logo.svg" alt="" onerror="this.remove()" /></span>
+      <span class="topbar-title">Deep Time</span>
+    </a>
+    <div class="topbar-actions">
+      <button id="creatures-toggle" class="btn-reset">Creatures</button>
+      <button id="about-toggle" class="btn-reset">About</button>
+      <button id="sources-toggle" class="btn-reset">Sources</button>
+      <div class="settings-menu">
+        <button id="settings-toggle" class="btn-reset" aria-expanded="false" aria-controls="settings-panel">
+          Settings <span class="caret" aria-hidden="true">▾</span>
+        </button>
+        <div id="settings-panel" class="jump-popover settings-popover" hidden>
+          <div class="settings-section">
+            <span class="settings-section-label">Display</span>
+            <label class="panel-opacity-ctrl">
+              Panel opacity <span id="panel-opacity-val">40%</span>
+              <input type="range" id="panel-opacity" min="0" max="1" step="0.05" value="0.4" />
+            </label>
+            <label class="settings-check"><input type="checkbox" id="reduce-motion" /> Disable animations</label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
 
   <header class="site-header">
     <div class="title-block">
@@ -21,14 +55,28 @@
       <h1>Deep Time</h1>
       <p class="subtitle">An interactive timeline of life on Earth. Scroll to zoom, drag to pan, click a stratum to focus on it, click a species to meet it.</p>
     </div>
-    <div class="controls" role="toolbar" aria-label="Timeline controls">
-      <span class="controls-label">Jump to</span>
-      <div id="jump-chips" class="chips"><!-- filled by JS --></div>
+    <div class="header-right">
+      <div id="view-buttons" class="view-buttons" role="toolbar" aria-label="View controls">
+        <fieldset id="tier-toggles" class="tier-toggles">
+          <legend class="controls-label">Show</legend>
+          <label><input type="checkbox" id="show-eon" checked /> Eons</label>
+          <label><input type="checkbox" id="show-era" checked /> Eras</label>
+          <label><input type="checkbox" id="show-period" checked /> Periods</label>
+        </fieldset>
+        <button id="toggle-species" class="btn-reset">Hide species</button>
+        <button id="toggle-events" class="btn-reset">Hide events</button>
+        <button id="toggle-audio" class="btn-reset" aria-pressed="false">Sound: Off</button>
+        <button id="reset-view" class="btn-reset">Reset view</button>
+      </div>
     </div>
-    <div id="view-buttons" class="view-buttons" role="toolbar" aria-label="View controls">
-      <button id="toggle-species" class="btn-reset">Hide species</button>
-      <!-- future view buttons go here -->
-      <button id="reset-view" class="btn-reset">Reset view</button>
+
+    <div class="controls" role="toolbar" aria-label="Timeline controls">
+      <div class="jump-menu">
+        <button id="jump-toggle" class="btn-reset" aria-expanded="false" aria-controls="jump-chips">
+          Jump to <span class="caret" aria-hidden="true">▾</span>
+        </button>
+        <div id="jump-chips" class="jump-popover" hidden><!-- filled by JS --></div>
+      </div>
     </div>
   </header>
 
@@ -38,8 +86,13 @@
       <div id="timeline" class="timeline">
         <div id="period-ribbon" class="period-ribbon" aria-label="Geologic periods"></div>
         <div id="time-axis" class="time-axis"></div>
+        <div id="event-markers" class="event-markers" aria-label="Earth events"></div>
         <div id="species-lanes" class="species-lanes" aria-label="Species lifespans"></div>
         <div id="present-marker" class="present-marker" title="Present day"><span>now</span></div>
+        <a id="me-marker" class="me-marker" href="me.html" title="That's me — see my page" hidden>
+          <span class="me-dot" aria-hidden="true"></span>
+          <span class="me-label">ME</span>
+        </a>
       </div>
       <p class="hint" id="timeline-hint">Tip: the Phanerozoic (the era of visible life) is only the last 12% of the ribbon — zoom in to find the dinosaurs.</p>
     </section>
@@ -48,16 +101,84 @@
     <section id="period-panel" class="period-panel" hidden aria-live="polite"></section>
   </main>
 
+  <!-- ====== 3D Globe overlay ====== -->
+  <div id="globe-overlay" class="globe-overlay" hidden></div>
+
   <!-- ====== Species card modal ====== -->
   <div id="species-modal" class="modal-backdrop" hidden>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="species-modal-title">
-      <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
       <div id="species-modal-content"><!-- filled by JS --></div>
     </div>
+    <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
   </div>
 
+  <!-- ====== About modal ====== -->
+  <div id="about-modal" class="modal-backdrop" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="about-title">
+      <div class="about-content">
+        <h2 id="about-title">About Deep Time</h2>
+        <p>Deep Time is an interactive timeline that runs from the formation of the Earth all
+          the way to the present day. It's a passion project that also doubles as my
+          portfolio, click the glowing <strong>ME</strong> marker at the present-day end of
+          the timeline to visit my personal page.</p>
+
+        <section class="modal-section">
+          <h3>Usage</h3>
+          <ol class="about-steps">
+            <li><strong>Navigate:</strong> Scroll to zoom, drag to pan. Pressing <em>Reset view</em> resets your view to default.</li>
+            <li><strong>Time units:</strong> Click any eon, era or period to focus it and open
+              its info panel. <em>Jump to</em> opens a panel that lets you select a period.</li>
+            <li><strong>Species:</strong> The coloured bars are species. Click the species label to open an info card. <em>Hide species</em> toggles them.</li>
+            <li><strong>Events:</strong> Amber diamonds mark big moments like impacts and ice
+              ages. Hover over them to see details. <em>Hide events</em> toggles them.</li>
+            <li><strong>3D map:</strong> In a focused period's panel, click
+              <em>View 3D Map</em> for a rotating globe of that age. You can spin it and use the
+              time slider to adjust the time inside of that period.</li>
+          </ol>
+        </section>
+
+        <section class="modal-section">
+          <h3>AI use</h3>
+          <p>For the time-period and species images, <strong>ChatGPT</strong> was used. I'm
+            not an artist, nor do I have the time to create my own art. Hopefully I can
+            replace these with real custom artwork in the future.</p>
+          <p>Claude helped with setting up the template for this website. I'm not a programmer by
+            trade but have medium knowledge. Full documentation of the code will follow.</p>
+        </section>
+      </div>
+    </div>
+    <button class="modal-close" id="about-close" aria-label="Close">&times;</button>
+  </div>
+
+  <!-- ====== Sources modal ====== -->
+  <div id="sources-modal" class="modal-backdrop" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="sources-title">
+      <div class="sources-content">
+        <h2 id="sources-title">Sources</h2>
+        <div id="sources-list"><!-- filled by JS --></div>
+      </div>
+    </div>
+    <button class="modal-close" id="sources-close" aria-label="Close">&times;</button>
+  </div>
+
+  <!-- ====== Creatures list modal ====== -->
+  <div id="creatures-modal" class="modal-backdrop" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="creatures-title">
+      <div class="creatures-content">
+        <h2 id="creatures-title">Creatures</h2>
+        <input type="search" id="creature-search" class="creature-search"
+               placeholder="Search creatures…" aria-label="Search creatures" />
+        <div id="creature-list"><!-- filled by JS --></div>
+      </div>
+    </div>
+    <button class="modal-close" id="creatures-close" aria-label="Close">&times;</button>
+  </div>
+
+  <!-- ====== Event hover/tap card ====== -->
+  <div id="event-card" class="event-card" hidden><!-- filled by JS --></div>
+
   <footer class="site-footer">
-    <p>Built as a living document — species and periods are loaded from simple JSON files. <a href="https://github.com" rel="noopener">Add your own.</a></p>
+    <p><a href="https://github.com/CapoenS/CapoenS.github.io" target="_blank" rel="noopener">My GitHub</a> · <a href="me.html">About me</a></p>
   </footer>
 
   <script type="module" src="js/main.js"></script>

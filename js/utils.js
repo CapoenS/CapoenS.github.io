@@ -8,6 +8,21 @@ export function clamp(value, min, max) {
 }
 
 /**
+ * Pick a readable text color (dark or light) for a given background hex,
+ * using perceived luminance. Returns the project's ink tones.
+ */
+export function textColorOn(hex) {
+  const h = (hex ?? "").replace("#", "");
+  const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+  const r = parseInt(full.slice(0, 2), 16) || 0;
+  const g = parseInt(full.slice(2, 4), 16) || 0;
+  const b = parseInt(full.slice(4, 6), 16) || 0;
+  // Perceived luminance (sRGB-weighted), 0–255.
+  const lum = 0.299 * r + 0.587 * g + 0.114 * b;
+  return lum > 150 ? "#11161f" : "#f5f3ec";
+}
+
+/**
  * Format a time in Ma (million years ago) for humans.
  *   4600   -> "4.6 Ga"
  *   155    -> "155 Ma"

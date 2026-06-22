@@ -1,0 +1,45 @@
+{
+  "_comment": "Point-in-time events in Earth's history. 'ma' = millions of years ago (a single moment; for long episodes like ice ages use a representative date). 'text' is a single free-text description shown on the hover/click card. 'image' is an optional 1:1 picture at assets/images/events/<id>.jpg (a placeholder shows if missing). 'category' is optional and reserved for future color/icon coding — markers are all amber for now. To add an event: copy an entry and fill it in.",
+  "events": [
+    {
+      "id": "late-heavy-bombardment-end",
+      "name": "End of the Late Heavy Bombardment",
+      "ma": 3900,
+      "category": "impact",
+      "image": "assets/images/events/late-heavy-bombardment-end.jpg",
+      "text": "The intense asteroid and comet bombardment that scarred the young Earth and Moon tapers off, leaving the surface calmer and allowing stable crust and early oceans to persist."
+    },
+    {
+      "id": "great-oxidation",
+      "name": "The Great Oxidation Event",
+      "ma": 2400,
+      "category": "atmosphere",
+      "image": "assets/images/events/great-oxidation.jpg",
+      "text": "Photosynthesising cyanobacteria flood the atmosphere with free oxygen for the first time, rusting the oceans into banded iron formations and driving many anaerobic microbes to extinction."
+    },
+    {
+      "id": "snowball-earth-marinoan",
+      "name": "Snowball Earth (Marinoan glaciation)",
+      "ma": 650,
+      "category": "glaciation",
+      "image": "assets/images/events/snowball-earth-marinoan.jpg",
+      "text": "Global glaciation drives ice sheets nearly to the equator, locking much of the planet in ice. Its end is followed soon after by the rise of the first complex multicellular life."
+    },
+    {
+      "id": "permian-extinction",
+      "name": "The Great Dying (end-Permian extinction)",
+      "ma": 252,
+      "category": "extinction",
+      "image": "assets/images/events/permian-extinction.jpg",
+      "text": "The most severe mass extinction in Earth's history. Massive Siberian volcanism wipes out roughly 90% of marine species and 70% of land vertebrates."
+    },
+    {
+      "id": "kpg-impact",
+      "name": "Chicxulub impact (K–Pg extinction)",
+      "ma": 66,
+      "category": "impact",
+      "image": "assets/images/events/kpg-impact.jpg",
+      "text": "A roughly 10 km asteroid strikes the Yucatán, triggering a global winter that ends the non-avian dinosaurs and opens the world to the rise of mammals."
+    }
+  ]
+}

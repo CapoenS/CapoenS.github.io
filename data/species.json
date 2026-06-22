@@ -1,5 +1,5 @@
 {
-  "_comment": "Each entry is one species (or genus). Times in Ma (million years ago). 'periodId' must match an id in periods.json — it colors the bar and links the card to its period. 'image' is relative to the site root; if the file is missing, a placeholder is shown. 'facts' is free-form: any key/value pairs you add will appear on the card. To add a species, copy a block and edit it.",
+  "_comment": "Each entry is one species (or genus). Times in Ma (million years ago). 'periodId' must match an id in periods.json — it colors the bar and links the card to its period. 'image' is relative to the site root; if the file is missing, a placeholder is shown. Optional 'sizeImage' is a self-contained size-comparison picture (creature silhouette next to a human), shown in a compact box on the card; convention assets/images/species/size/<id>.png — omit it to hide the section. 'facts' is free-form: any key/value pairs you add will appear on the card. To add a species, copy a block and edit it.",
   "species": [
     {
       "id": "stegosaurus",
@@ -9,6 +9,7 @@
       "endMa": 145,
       "periodId": "jurassic",
       "image": "assets/images/species/stegosaurus.jpg",
+      "sizeImage": "assets/images/species/size/stegosaurus.png",
       "summary": "A bus-sized plant-eater with a double row of bony plates along its back and a spiked tail (the 'thagomizer') swung at predators like Allosaurus. Despite its size, its brain was about the size of a lime.",
       "facts": {
         "Length": "up to ~9 m",
@@ -64,6 +65,121 @@
         "Diet": "Carnivore",
         "Bite force": "~35,000+ N",
         "Found in": "Western North America"
+      }
+    },
+    {
+      "id": "nanuqsaurus",
+      "name": "Nanuqsaurus",
+      "group": "Theropod dinosaur",
+      "startMa": 70,
+      "endMa": 68,
+      "periodId": "cretaceous",
+      "image": "assets/images/species/nanuqsaurus.jpg",
+      "summary": "lorem ipsum....",
+      "facts": {
+        "Length": "~5-6 m",
+        "Weight": "~500-900 kg",
+        "Diet": "Carnivore",
+        "Bite force": "/NA/",
+        "Found in": "Prince Creek Formation, North Slope, Alaska, USA"
+      }
+    },
+    {
+      "id": "luca",
+      "name": "LUCA",
+      "group": "Hypothetical single-celled ancestor",
+      "startMa": 4000,
+      "endMa": 3800,
+      "periodId": "eoarchean",
+      "image": "assets/images/species/luca.jpg",
+      "summary": "The Last Universal Common Ancestor: not a fossil but an inference — the single-celled organism from which every living thing — bacteria, archaea, plants, animals, you — is descended. It likely lived in hot, mineral-rich water without oxygen, already running the core chemistry of life that all its descendants still share.",
+      "facts": {
+        "Type": "Single-celled microbe (inferred)",
+        "Metabolism": "Chemoautotroph (hydrogen, CO₂)",
+        "Lived in": "Hot, anoxic / hydrothermal waters",
+        "Fun fact": "We've never found LUCA, yet we can reconstruct hundreds of its genes from what all modern life still has in common."
+      }
+    },
+    {
+      "id": "anomalocaris",
+      "name": "Anomalocaris",
+      "group": "Radiodont (early arthropod relative)",
+      "startMa": 520,
+      "endMa": 500,
+      "periodId": "cambrian",
+      "image": "assets/images/species/anomalocaris.jpg",
+      "summary": "One of the first great predators — a metre-long swimmer that cruised the Cambrian seas on rows of flexible side-flaps, seizing prey with a pair of spiny front appendages and crushing it in a circular, pineapple-slice mouth. It was the apex hunter of a world where most animals were thumb-sized.",
+      "facts": {
+        "Length": "up to ~1 m",
+        "Diet": "Carnivore (trilobites, soft prey)",
+        "Found in": "Canada, China, Australia",
+        "Fun fact": "Its mouth and grasping arms were each first described as separate animals before the whole creature was reassembled."
+      }
+    },
+    {
+      "id": "wiwaxia",
+      "name": "Wiwaxia",
+      "group": "Armoured lophotrochozoan (mollusc/annelid relative)",
+      "startMa": 515,
+      "endMa": 505,
+      "periodId": "cambrian",
+      "image": "assets/images/species/wiwaxia.jpg",
+      "summary": "A slug-sized seafloor grazer sheathed in overlapping scales, with two rows of upright blade-like spines warding off attack from above. It scraped microbial mats with a rasping mouth — an early experiment in the body plans that would lead to molluscs and worms.",
+      "facts": {
+        "Length": "up to ~5 cm",
+        "Diet": "Grazer (microbial mats)",
+        "Found in": "Canada, China, worldwide Cambrian seas",
+        "Fun fact": "Its exact place on the tree of life is still debated — somewhere near the ancestry of molluscs and annelids."
+      }
+    },
+    {
+      "id": "hallucigenia",
+      "name": "Hallucigenia",
+      "group": "Lobopodian (velvet-worm relative)",
+      "startMa": 515,
+      "endMa": 505,
+      "periodId": "cambrian",
+      "image": "assets/images/species/hallucigenia.jpg",
+      "summary": "A tiny, dream-like worm that walked on seven pairs of clawed legs and bristled with defensive spines down its back. So bizarre that scientists first reconstructed it upside-down and back-to-front — the 'head' turned out to be the tail.",
+      "facts": {
+        "Length": "~10–35 mm",
+        "Diet": "Likely scavenger / detritivore",
+        "Found in": "Canada (Burgess Shale), China",
+        "Fun fact": "Named for its 'hallucination-like' appearance, it's an early cousin of today's velvet worms."
+      }
+    },
+    {
+      "id": "utahraptor",
+      "name": "Utahraptor",
+      "group": "Dromaeosaurid (raptor) dinosaur",
+      "startMa": 135,
+      "endMa": 130,
+      "periodId": "cretaceous",
+      "image": "assets/images/species/utah_raptor.jpg",
+      "summary": "The largest 'raptor' ever found — a half-tonne predator the weight of a polar bear, armed with a 23-centimetre sickle claw on each foot. Far bigger and heavier than the Velociraptor of films, it stalked the floodplains of Early Cretaceous Utah.",
+      "facts": {
+        "Length": "~5–7 m",
+        "Weight": "~300–500 kg",
+        "Diet": "Carnivore",
+        "Found in": "Utah, USA",
+        "Fun fact": "Its killing claw was longer than your hand — the biggest of any dromaeosaur."
+      }
+    },
+    {
+      "id": "pachyrhinosaurus",
+      "name": "Pachyrhinosaurus",
+      "group": "Horned dinosaur (centrosaurine ceratopsian)",
+      "startMa": 73,
+      "endMa": 69,
+      "periodId": "cretaceous",
+      "image": "assets/images/species/pachyrhinosaurus.jpg",
+      "summary": "A heavyset horned dinosaur that traded the usual nasal horn for a massive bony pad, or 'boss', over its snout — probably for head-to-head shoving matches. Great herds roamed the Arctic of Late Cretaceous Alaska, enduring months of winter darkness.",
+      "facts": {
+        "Length": "~5–8 m",
+        "Weight": "~2–4 tonnes",
+        "Diet": "Herbivore",
+        "Found in": "Alaska (USA), Alberta (Canada)",
+        "Fun fact": "It shared the polar Prince Creek Formation with the 'polar bear lizard' Nanuqsaurus."
       }
     }
   ]

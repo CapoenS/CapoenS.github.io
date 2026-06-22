@@ -1,0 +1,33 @@
+{
+  "_comment": "Sources & credits grouped by category. Each category: { label, sources: [ { title, url?, note? } ] }. 'url' turns the title into a link; 'note' is optional (author/year or what it was used for). Add entries or whole new categories freely — the Sources modal renders whatever is here.",
+  "categories": [
+    {
+      "label": "Geo-data",
+      "sources": [
+        { "title": "GPlates Web Service", "url": "https://gws.gplates.org/", "note": "Live paleocoastline reconstructions for the 3D globes" },
+        { "title": "EarthByte Group", "url": "https://www.earthbyte.org/", "note": "Plate-tectonic data and models" },
+        { "title": "International Chronostratigraphic Chart (ICS)", "url": "https://stratigraphy.org/chart", "note": "Geologic time divisions and colours" }
+      ]
+    },
+    {
+      "label": "Website / online info",
+      "sources": [
+        { "title": "Geological history of the earth", "url": "https://en.wikipedia.org/wiki/Geological_history_of_Earth", "note":"Wiki page about major geological events in Earth's past." }
+      ]
+    },
+    {
+      "label": "Scientific papers",
+      "sources": [
+        { "title": "Merdith, A. S. et al. (2021). Extending full-plate tectonic models into deep time.", "url": "https://doi.org/10.1016/j.earscirev.2020.103477", "note": "Earth-Science Reviews — the MERDITH2021 model behind the globes" }
+      ]
+    },
+    {
+      "label": "Books",
+      "sources": [
+        { "title": "[Prehistoric Life: The Definitive Visual History of Life on Earth  — DK, 2012]" },
+        { "title": "[Wonderful Life: The Burgess Shale and the Nature of History  — Stephan Jay Gould, 2007]" },
+        { "title": "[Snapshots of prehistory  — Paleorex, 2026]" }
+      ]
+    }
+  ]
+}
