@@ -2,33 +2,62 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <!-- Preconnect first so the font fetches start as early as possible. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Deep Time — An Interactive Timeline of Life on Earth</title>
   <meta name="description" content="Explore 4.6 billion years of Earth's history: geologic periods, ancient atmospheres, and the species that lived through them." />
 
   <!-- Fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
 
   <link rel="stylesheet" href="css/style.css" />
 
-  <!-- d3 for globe projection (loaded before the module so Globe can use it as a global) -->
-  <script src="https://unpkg.com/d3@7.9.0/dist/d3.min.js"></script>
-  <!-- Baked paleogeographic fallbacks (globals: window.AE_BAKED_105, window.CRETACEOUS, window.PANGAEA) -->
-  <script src="js/geo/ae-baked-105.js"></script>
-  <script src="js/geo/cretaceous-geo.js"></script>
-  <script src="js/geo/pangaea-geo.js"></script>
+  <!-- d3 for globe projection + baked paleogeographic fallbacks (globals:
+       window.AE_BAKED_105, window.CRETACEOUS, window.PANGAEA). `defer` keeps them
+       off the critical render path; deferred scripts still run in document order
+       BEFORE the end-of-body module (js/main.js), so the globals stay available. -->
+  <script defer src="https://unpkg.com/d3@7.9.0/dist/d3.min.js"></script>
+  <script defer src="js/geo/ae-baked-105.js"></script>
+  <script defer src="js/geo/cretaceous-geo.js"></script>
+  <script defer src="js/geo/pangaea-geo.js"></script>
 </head>
 <body>
+
+  <!-- Drifting starfield (only visible in cosmos mode; behind the page content) -->
+  <div id="starfield" aria-hidden="true"></div>
+
+  <!-- EXPERIMENTAL: default background option 2 — slow drifting aurora blobs.
+       Self-contained: delete this element + the matching "EXPERIMENTAL: aurora
+       background" CSS block in css/style.css to remove. Touches nothing else. -->
+  <div id="bg-aurora" aria-hidden="true">
+    <span class="aurora-blob aurora-a"></span>
+    <span class="aurora-blob aurora-b"></span>
+    <span class="aurora-blob aurora-c"></span>
+  </div>
+
+  <!-- EXPERIMENTAL: default background — drifting dust motes. Self-contained:
+       delete this element + the matching "EXPERIMENTAL: dust motes" CSS block
+       in css/style.css to remove. Touches nothing else. -->
+  <div id="bg-motes" aria-hidden="true">
+    <span class="mote-layer mote-near"></span>
+    <span class="mote-layer mote-far"></span>
+  </div>
 
   <nav class="topbar" aria-label="Site">
     <a class="topbar-brand" href="index.html">
       <span class="topbar-logo" aria-hidden="true">DT<img src="assets/images/logo.svg" alt="" onerror="this.remove()" /></span>
       <span class="topbar-title">Deep Time</span>
     </a>
-    <div class="topbar-actions">
+    <div class="topbar-nav">
+      <button id="tour-toggle" class="btn-reset">Journey</button>
       <button id="creatures-toggle" class="btn-reset">Creatures</button>
+      <button id="events-toggle" class="btn-reset">Events</button>
+      <a id="starmap-link" class="btn-reset" href="starmap/" target="_blank" rel="noopener">Star Map</a>
+      <a id="primal-clash-link" class="btn-reset" href="primal-clash/" target="_blank" rel="noopener">Primal Clash</a>
+    </div>
+    <div class="topbar-actions">
       <button id="about-toggle" class="btn-reset">About</button>
       <button id="sources-toggle" class="btn-reset">Sources</button>
       <div class="settings-menu">
@@ -71,6 +100,9 @@
     </div>
 
     <div class="controls" role="toolbar" aria-label="Timeline controls">
+      <div class="return-earth-row">
+        <button id="return-earth" class="btn-reset" hidden>↩ Return to Earth</button>
+      </div>
       <div class="jump-menu">
         <button id="jump-toggle" class="btn-reset" aria-expanded="false" aria-controls="jump-chips">
           Jump to <span class="caret" aria-hidden="true">▾</span>
@@ -85,6 +117,17 @@
     <section class="timeline-section" aria-label="Geologic timeline">
       <div id="timeline" class="timeline">
         <div id="period-ribbon" class="period-ribbon" aria-label="Geologic periods"></div>
+        <!-- Teaser at the far left → reveals the cosmos timeline (hidden if no cosmos data) -->
+        <button id="cosmos-teaser" type="button" hidden
+                aria-label="Reveal the cosmos — the timeline back to the Big Bang">
+          <span class="cosmos-teaser-label">◄ Before Earth — the Cosmos</span>
+        </button>
+        <!-- Big Bang burst, anchored at 13.8 Ga (plays on cosmos reveal) -->
+        <div id="bigbang" aria-hidden="true">
+          <span class="bb-flash"></span>
+          <span class="bb-shock"></span>
+          <span class="bb-core"></span>
+        </div>
         <div id="time-axis" class="time-axis"></div>
         <div id="event-markers" class="event-markers" aria-label="Earth events"></div>
         <div id="species-lanes" class="species-lanes" aria-label="Species lifespans"></div>
@@ -110,6 +153,14 @@
       <div id="species-modal-content"><!-- filled by JS --></div>
     </div>
     <button class="modal-close" id="modal-close" aria-label="Close">&times;</button>
+  </div>
+
+  <!-- ====== Event detail modal (opens on marker click) ====== -->
+  <div id="event-modal" class="modal-backdrop" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="event-modal-title">
+      <div id="event-modal-content" class="event-detail"><!-- filled by JS --></div>
+    </div>
+    <button class="modal-close" id="event-modal-close" aria-label="Close">&times;</button>
   </div>
 
   <!-- ====== About modal ====== -->
@@ -174,8 +225,49 @@
     <button class="modal-close" id="creatures-close" aria-label="Close">&times;</button>
   </div>
 
+  <!-- ====== Events list modal ====== -->
+  <div id="events-modal" class="modal-backdrop" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="events-title">
+      <div class="events-content">
+        <h2 id="events-title">Events</h2>
+        <input type="search" id="event-search" class="event-search"
+               placeholder="Search events…" aria-label="Search events" />
+        <div id="event-list"><!-- filled by JS --></div>
+      </div>
+    </div>
+    <button class="modal-close" id="events-close" aria-label="Close">&times;</button>
+  </div>
+
   <!-- ====== Event hover/tap card ====== -->
   <div id="event-card" class="event-card" hidden><!-- filled by JS --></div>
+
+  <!-- ====== Guided "Journey through time" overlay ====== -->
+  <div id="tour-overlay" class="tour-overlay" hidden>
+    <div class="tour-bar">
+      <span class="tour-readout" id="tour-readout"></span>
+      <label class="tour-speed-ctrl">Speed
+        <input type="range" id="tour-speed" min="0.3" max="2" step="0.05" value="0.7" aria-label="Journey speed" />
+      </label>
+      <button class="btn-reset" id="tour-exit">Exit journey</button>
+    </div>
+    <div class="tour-playhead" aria-hidden="true"></div>
+    <div class="tour-reveal" id="tour-reveal" aria-hidden="true">
+      <div class="tour-reveal-title" id="tour-reveal-title"></div>
+      <div class="tour-reveal-sub" id="tour-reveal-sub"></div>
+    </div>
+    <div class="tour-caption" id="tour-caption" hidden>
+      <h3 class="tour-caption-title" id="tour-caption-title"></h3>
+      <p class="tour-caption-meta" id="tour-caption-meta"></p>
+      <p class="tour-caption-text" id="tour-caption-text"></p>
+      <div class="tour-caption-actions">
+        <button class="btn-reset" id="tour-details">View details</button>
+        <button class="btn-reset tour-continue" id="tour-continue">Continue &#9654;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ====== [EXPERIMENTAL] Journey "living creatures" dock (remove with its CSS/JS to disable) ====== -->
+  <div id="journey-dock" aria-hidden="true"><!-- cards injected by journeySpecies.js --></div>
 
   <footer class="site-footer">
     <p><a href="https://github.com/CapoenS/CapoenS.github.io" target="_blank" rel="noopener">My GitHub</a> · <a href="me.html">About me</a></p>

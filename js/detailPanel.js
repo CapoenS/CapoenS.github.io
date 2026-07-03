@@ -41,7 +41,8 @@ export class PeriodPanel {
 
     const headerRight = el("div", "panel-header-right");
     headerRight.append(dates);
-    if (this.onGlobeOpen) {
+    // No paleogeographic globe for cosmos units — there was no Earth yet.
+    if (this.onGlobeOpen && period.realm !== "cosmos") {
       const globeBtn = el("button", "btn-globe");
       globeBtn.textContent = "View 3D Map";
       globeBtn.title = `Open paleogeographic globe for the ${period.name}`;
@@ -105,13 +106,13 @@ export class SpeciesModal {
     this._reduceMotion =
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
     this._tiltTimer = null;
-    // --- Parallax tuning (revert to 6 / 1.06 / 8 for the subtler original) ---
-    this._tiltMax = 9;      // card tilt, degrees   (was 6)
-    this._imgScale = 1.14;  // image zoom/headroom  (was 1.06; keep CSS base in sync)
-    this._imgShift = 18;    // image parallax nudge, px (was 8)
+    // --- Parallax tuning (dial toward 6 / 1.06 / 8 for the subtlest original) ---
+    this._tiltMax = 7;      // card tilt, degrees
+    this._imgScale = 1.10;  // image zoom/headroom  (keep CSS base in sync)
+    this._imgShift = 12;    // image parallax nudge, px
     // --- Click "push" tuning (set _pressScale=1 / _nudgeDeg=0 to disable) ---
-    this._pressScale = 0.96; // how far the card dips in on press
-    this._nudgeDeg = 5;      // extra tilt toward the click point on press
+    this._pressScale = 0.97; // how far the card dips in on press
+    this._nudgeDeg = 4;      // extra tilt toward the click point on press
 
     this.cardImg = null;
     this._px = 0;            // latest cursor position within the card (-0.5..0.5)
@@ -294,6 +295,97 @@ export class EventCard {
     this.root.hidden = true;
     document.removeEventListener("click", this._onDocClick, true);
     document.removeEventListener("keydown", this._onEsc);
+  }
+}
+
+/* ================= Event detail modal (opens on marker click) ================= */
+
+export class EventModal {
+  constructor({ backdropEl, contentEl, closeBtn, onClose }) {
+    this.backdrop = backdropEl;
+    this.content = contentEl;
+    this.card = backdropEl.querySelector(".modal-card");
+    this.onClose = onClose ?? null;
+
+    closeBtn?.addEventListener("click", () => this.hide());
+    this.backdrop.addEventListener("click", (e) => {
+      if (e.target === this.backdrop) this.hide(); // click outside the card
+    });
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !this.backdrop.hidden) this.hide();
+    });
+  }
+
+  /** Show the full detail for an event (period-panel-style layout). */
+  show(event) {
+    this.content.innerHTML = "";
+
+    // Header: name + (date · optional category pill)
+    const header = el("div", "panel-header");
+    const h2 = el("h2");
+    h2.id = "event-modal-title";
+    h2.textContent = event.name;
+
+    const headerRight = el("div", "panel-header-right");
+    const dates = el("span", "panel-dates");
+    dates.textContent = formatMa(event.ma);
+    headerRight.appendChild(dates);
+    if (event.category) {
+      const cat = el("span", "event-cat");
+      cat.textContent = event.category;
+      headerRight.appendChild(cat);
+    }
+    header.append(h2, headerRight);
+
+    // Overview: longer intro, falling back to the short preview text.
+    let overview = null;
+    const overviewText = event.overview ?? event.text;
+    if (overviewText) {
+      overview = el("div", "panel-overview");
+      const p = el("p");
+      p.textContent = overviewText;
+      overview.appendChild(p);
+    }
+
+    // Body: free-form facts (if any) + image, mirroring the period panel.
+    const body = el("div", "panel-body");
+
+    const entries = Object.entries(event.info ?? {});
+    if (entries.length) {
+      const facts = el("div", "panel-facts");
+      const dl = el("dl");
+      for (const [key, value] of entries) {
+        const dt = el("dt");
+        dt.textContent = key;
+        const dd = el("dd");
+        dd.textContent = value;
+        dl.append(dt, dd);
+      }
+      facts.appendChild(dl);
+      body.appendChild(facts);
+    }
+
+    const images = el("div", "panel-images");
+    images.appendChild(imageWithFallback(event.image, event.name));
+    body.appendChild(images);
+
+    this.content.append(header, ...(overview ? [overview] : []), body);
+    this.backdrop.hidden = false;
+    document.documentElement.classList.add("event-open"); // sharpen the bg image
+
+    if (this.card && !document.documentElement.classList.contains("no-motion")) {
+      this.card.classList.remove("opening");
+      void this.card.offsetWidth; // reflow → replay the pop
+      this.card.classList.add("opening");
+    }
+  }
+
+  hide() {
+    const wasOpen = !this.backdrop.hidden;
+    this.card?.classList.remove("opening");
+    this.backdrop.hidden = true;
+    document.documentElement.classList.remove("event-open");
+    if (wasOpen) this.onClose?.();
   }
 }
 

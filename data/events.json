@@ -1,5 +1,5 @@
 {
-  "_comment": "Point-in-time events in Earth's history. 'ma' = millions of years ago (a single moment; for long episodes like ice ages use a representative date). 'text' is a single free-text description shown on the hover/click card. 'image' is an optional 1:1 picture at assets/images/events/<id>.jpg (a placeholder shows if missing). 'category' is optional and reserved for future color/icon coding — markers are all amber for now. To add an event: copy an entry and fill it in.",
+  "_comment": "Point-in-time events in Earth's history. 'ma' = millions of years ago (a single moment; for long episodes like ice ages use a representative date). 'text' is a SHORT description shown in the hover PREVIEW card. Optional 'overview' (a longer intro) and 'info' (free-form key/value facts, like a period's info) fill the bigger DETAIL modal that opens when you click the marker — if 'overview' is absent the modal falls back to 'text', and 'info' is skipped if missing. 'image' is an optional 1:1 picture at assets/images/events/<id>.jpg (used in the hover/detail cards; a placeholder shows if missing). Optional 'background' is a larger/landscape image used as the page background when the event is shown (clicked, or reached in the journey); it falls back to 'image' if absent. 'category' is an optional label (e.g. impact, extinction) shown as a small tag. To add an event: copy an entry and fill it in.",
   "events": [
     {
       "id": "late-heavy-bombardment-end",
@@ -7,6 +7,7 @@
       "ma": 3900,
       "category": "impact",
       "image": "assets/images/events/late-heavy-bombardment-end.jpg",
+      "background": "assets/images/events/late-heavy-bombardment-end-bg.jpg",
       "text": "The intense asteroid and comet bombardment that scarred the young Earth and Moon tapers off, leaving the surface calmer and allowing stable crust and early oceans to persist."
     },
     {
@@ -39,7 +40,15 @@
       "ma": 66,
       "category": "impact",
       "image": "assets/images/events/kpg-impact.jpg",
-      "text": "A roughly 10 km asteroid strikes the Yucatán, triggering a global winter that ends the non-avian dinosaurs and opens the world to the rise of mammals."
+      "text": "A roughly 10 km asteroid strikes the Yucatán, triggering a global winter that ends the non-avian dinosaurs and opens the world to the rise of mammals.",
+      "overview": "On an otherwise ordinary day at the close of the Cretaceous, a mountain-sized asteroid slammed into the shallow sea off the Yucatán Peninsula at tens of kilometres per second. The impact flung molten rock around the globe; the falling debris heated the sky and ignited wildfires, then plunged the world into a years-long 'impact winter' as soot and aerosols blocked the Sun. Photosynthesis collapsed on land and in the oceans, and roughly three-quarters of all species — every non-avian dinosaur among them — vanished, clearing the way for mammals to inherit the Earth.",
+      "info": {
+        "Impactor": "~10–15 km asteroid",
+        "Crater": "Chicxulub, ~180 km wide (Yucatán, Mexico)",
+        "Energy": "~100 million megatons of TNT",
+        "Extinction": "~75% of species; all non-avian dinosaurs",
+        "Aftermath": "Years-long 'impact winter'; rise of mammals"
+      }
     }
   ]
 }

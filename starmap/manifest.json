@@ -1,0 +1,14 @@
+{
+  "name": "Star Map",
+  "short_name": "Star Map",
+  "description": "A planetarium for the eyepiece — stars, planets and the full Messier catalog for your location and time.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#03060e",
+  "theme_color": "#03060e",
+  "icons": [
+    { "src": "./icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}

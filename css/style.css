@@ -14,6 +14,7 @@
   --ink-dim: #9aa0ad;      /* secondary text */
   --line: #262d3d;         /* hairlines */
   --accent: #f0b95a;       /* amber: highlights, focus rings */
+  --event-amber: #ffb52e;  /* brighter amber for event markers (rgb 255,181,46) */
 
   /* Panel translucency test: 1 = solid, 0 = fully see-through.
      --panel-bg is --bg-raised (rgb 34,42,60) with this alpha. */
@@ -56,9 +57,10 @@ a { color: var(--accent); }
   position: sticky;
   top: 0;
   z-index: 50;
-  display: flex;
+  transition: opacity 400ms ease;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr; /* brand | centered content nav | info/settings */
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
   height: 48px;
   padding: 0 clamp(12px, 4vw, 28px);
@@ -68,6 +70,7 @@ a { color: var(--accent); }
   border-bottom: 1px solid var(--line);
 }
 .topbar-brand {
+  justify-self: start;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -101,10 +104,19 @@ a { color: var(--accent); }
   font-size: 1.05rem;
   letter-spacing: 0.01em;
 }
-.topbar-actions {
+.topbar-nav {
+  justify-self: center;
   display: flex;
   align-items: center;
   gap: 10px;
+}
+.topbar-actions {
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-left: 16px;
+  border-left: 1px solid var(--line); /* divider: content nav | info/settings */
 }
 
 .about-content {
@@ -153,7 +165,9 @@ a { color: var(--accent); }
 .sources-cat:last-child { margin-bottom: 0; }
 .sources-cat h3,
 .modal-section h3,
-.creature-group h3 {
+.creature-group h3,
+.event-group h3,
+.jump-group h3 {
   font-family: var(--font-mono);
   font-size: 0.82rem;
   text-transform: uppercase;
@@ -180,16 +194,20 @@ a { color: var(--accent); }
 .sources-cat a:hover { text-decoration: underline; }
 .source-note { color: var(--ink-dim); }
 
-/* --- Creatures list modal (every species, grouped by period, searchable) --- */
-#creatures-modal .modal-card { width: min(560px, 100%); }
-.creatures-content { padding: 28px 34px 32px; }
-.creatures-content h2 {
+/* --- Creatures / Events list modals (grouped by unit, searchable) --- */
+#creatures-modal .modal-card,
+#events-modal .modal-card { width: min(560px, 100%); }
+.creatures-content,
+.events-content { padding: 28px 34px 32px; }
+.creatures-content h2,
+.events-content h2 {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.6rem;
   margin: 0 0 16px;
 }
-.creature-search {
+.creature-search,
+.event-search {
   position: sticky;
   top: 0;
   z-index: 1;
@@ -204,12 +222,19 @@ a { color: var(--accent); }
   border: 1px solid var(--line);
   border-radius: 8px;
 }
-.creature-search::placeholder { color: var(--ink-dim); }
-.creature-search:focus { outline: none; border-color: var(--accent); }
-.creature-group { margin-bottom: 24px; }
-.creature-group:last-child { margin-bottom: 0; }
-.creature-group[hidden] { display: none; }
-.creature-group ul {
+.creature-search::placeholder,
+.event-search::placeholder { color: var(--ink-dim); }
+.creature-search:focus,
+.event-search:focus { outline: none; border-color: var(--accent); }
+.creature-group,
+.event-group { margin-bottom: 24px; }
+.creature-group:last-child,
+.event-group:last-child { margin-bottom: 0; }
+.creature-group[hidden],
+.event-group[hidden] { display: none; }
+.creature-group ul,
+.event-group ul,
+.jump-group ul {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -217,8 +242,12 @@ a { color: var(--accent); }
   flex-direction: column;
   gap: 6px;
 }
-.creature-group li[hidden] { display: none; }
-.creature-row {
+.creature-group li[hidden],
+.event-group li[hidden],
+.jump-group li[hidden] { display: none; }
+.creature-row,
+.event-row,
+.jump-row {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
@@ -235,9 +264,15 @@ a { color: var(--accent); }
   font: inherit;
   transition: background-color 120ms ease, border-color 120ms ease;
 }
-.creature-row:hover { background: var(--bg-raised); border-color: var(--row-color, var(--accent)); }
-.creature-name { font-weight: 500; }
-.creature-range {
+.creature-row:hover,
+.event-row:hover,
+.jump-row:hover { background: var(--bg-raised); border-color: var(--row-color, var(--accent)); }
+.creature-name,
+.event-name,
+.jump-name { font-weight: 500; }
+.creature-range,
+.event-when,
+.jump-when {
   flex: none;
   font-family: var(--font-mono);
   font-size: 0.78rem;
@@ -256,13 +291,16 @@ a { color: var(--accent); }
   inset: 0;
   background-size: cover;
   background-position: center;
-  filter: blur(5px) brightness(0.5);
+  filter: blur(3px) brightness(0.5);
   transform: scale(1.06); /* hide blurred edges */
   opacity: 0;
-  transition: opacity 600ms ease;
+  transition: opacity 600ms ease, filter 400ms ease;
   will-change: opacity;
 }
 .bg-frame.active { opacity: 1; }
+/* Journey mode + an open event card show the background image sharp (blur removed). */
+html.touring .bg-frame,
+html.event-open .bg-frame { filter: brightness(0.5); }
 
 #bg-scrim {
   position: fixed;
@@ -283,6 +321,7 @@ a { color: var(--accent); }
 .site-header {
   padding: 48px clamp(16px, 5vw, 64px) 24px;
   position: relative;
+  transition: opacity 400ms ease;
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
@@ -401,8 +440,6 @@ html.no-motion *::after {
   color: var(--ink-dim);
 }
 
-.chips { display: flex; flex-wrap: wrap; gap: 8px; }
-
 /* Jump-to popover */
 .jump-menu, .settings-menu { position: relative; }
 
@@ -448,6 +485,9 @@ html.no-motion *::after {
 }
 .jump-popover[hidden] { display: none; }
 
+/* The Jump-to popover gets a set width so its rows read as full rows. */
+#jump-chips { width: min(330px, 90vw); }
+
 @keyframes jump-pop {
   0%   { opacity: 0; transform: translateY(-6px) scale(0.92); }
   100% { opacity: 1; transform: translateY(0)    scale(1); }
@@ -478,14 +518,6 @@ html.no-motion *::after {
     animation: none;
   }
 }
-.jump-group-label {
-  font-family: var(--font-mono);
-  font-size: 0.66rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--ink-dim);
-}
-
 .chip, .btn-reset {
   font-family: var(--font-body);
   font-size: 0.82rem;
@@ -496,6 +528,7 @@ html.no-motion *::after {
   border-radius: 999px;
   padding: 6px 14px;
   cursor: pointer;
+  text-decoration: none; /* so .btn-reset works on the Star Map <a> too */
   transition: border-color 120ms ease, transform 120ms ease;
 }
 
@@ -513,6 +546,8 @@ html.no-motion *::after {
   width: 100%;
   user-select: none;
   cursor: grab;
+  opacity: 0.6; /* let the immersive background softly show through the timeline (tunable) */
+  transition: opacity 400ms ease;
 }
 .timeline.dragging { cursor: grabbing; }
 
@@ -776,7 +811,7 @@ html.no-motion .species-bar.flash {
   left: 0;
   right: 0;
   height: 0;
-  z-index: 4;
+  z-index: 7; /* above hovered (5) / focused (6) bands so the amber is never clipped */
   pointer-events: none;
 }
 .event-markers[hidden] { display: none; }
@@ -784,10 +819,10 @@ html.no-motion .species-bar.flash {
 .event-marker {
   position: absolute;
   top: 0;
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   padding: 0;
-  background: var(--accent);
+  background: var(--event-amber);
   border: 1px solid rgba(0, 0, 0, 0.35);
   border-radius: 2px;
   transform: translate(-50%, -50%) rotate(45deg); /* diamond */
@@ -801,7 +836,37 @@ html.no-motion .species-bar.flash {
   opacity: 1;
   outline: none;
   transform: translate(-50%, -50%) rotate(45deg) scale(1.25);
-  box-shadow: 0 0 8px 1px rgba(240, 185, 90, 0.6);
+  box-shadow: 0 0 8px 1px rgba(255, 181, 46, 0.6);
+}
+/* Brief attention pulse when arriving at an event from the Events list. */
+.event-marker.flash {
+  z-index: 2;
+  opacity: 1;
+  animation: event-flash 1.6s ease-out;
+}
+@keyframes event-flash {
+  0%, 100% {
+    transform: translate(-50%, -50%) rotate(45deg) scale(1);
+    box-shadow: 0 0 0 0 rgba(240, 185, 90, 0);
+  }
+  15% {
+    transform: translate(-50%, -50%) rotate(45deg) scale(1.6);
+    box-shadow: 0 0 12px 3px rgba(255, 181, 46, 0.85);
+  }
+  70% {
+    transform: translate(-50%, -50%) rotate(45deg) scale(1.3);
+    box-shadow: 0 0 9px 2px rgba(255, 181, 46, 0.6);
+  }
+}
+/* Motion off: a static ring instead of the pulse (class is removed after ~1.6s). */
+html.no-motion .event-marker.flash {
+  box-shadow: 0 0 0 3px rgba(255, 181, 46, 0.9);
+}
+@media (prefers-reduced-motion: reduce) {
+  .event-marker.flash {
+    animation: none;
+    box-shadow: 0 0 0 3px rgba(255, 181, 46, 0.9);
+  }
 }
 
 /* ---- Event hover/tap card ---- */
@@ -871,7 +936,8 @@ html.no-motion .species-bar.flash {
   overflow: hidden;
 }
 
-.period-panel .panel-header {
+.period-panel .panel-header,
+.event-detail .panel-header {
   padding: 24px 28px 18px;
   border-bottom: 1px solid var(--line);
   display: flex;
@@ -880,17 +946,32 @@ html.no-motion .species-bar.flash {
   flex-wrap: wrap;
 }
 
-.period-panel h2 {
+.period-panel h2,
+.event-detail h2 {
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 1.8rem;
   margin: 0;
 }
 
-.period-panel .panel-dates {
+.period-panel .panel-dates,
+.event-detail .panel-dates {
   font-family: var(--font-mono);
   font-size: 0.8rem;
   color: var(--ink-dim);
+}
+
+/* Event detail modal: width + the category tag */
+#event-modal .modal-card { width: min(560px, 100%); }
+.event-cat {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #3a2a06;
+  background: var(--event-amber);
+  padding: 3px 9px;
+  border-radius: 999px;
 }
 
 .panel-swatch {
@@ -1046,7 +1127,7 @@ html.no-motion .species-bar.flash {
   border-bottom: 1px solid var(--line);
   width: 100%;
   display: block;
-  transform: scale(1.14); /* headroom for the parallax nudge — keep in sync with _imgScale (revert: 1.06) */
+  transform: scale(1.10); /* headroom for the parallax nudge — keep in sync with _imgScale (revert: 1.06) */
   transition: transform 120ms ease;
   will-change: transform;
 }
@@ -1264,6 +1345,186 @@ html.no-motion .species-bar.flash {
   cursor: pointer;
 }
 
+/* ============ Journey-through-time overlay ============ */
+.tour-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80; /* above the timeline, below the modals (100) so View details layers on top */
+  pointer-events: none; /* the scene shows through; only the buttons are interactive */
+}
+.tour-overlay[hidden] { display: none; }
+.tour-overlay button,
+.tour-overlay input { pointer-events: auto; }
+
+.tour-bar {
+  position: absolute;
+  top: clamp(16px, 4vh, 40px); left: 0; right: 0;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr; /* fixed lanes so the readout's width can't shove the slider */
+  align-items: center;
+  gap: 16px;
+  padding: 12px clamp(16px, 5vw, 48px);
+  background: linear-gradient(to bottom, rgba(5, 7, 11, 0.72), rgba(5, 7, 11, 0));
+}
+.tour-bar > .tour-readout { justify-self: start; }
+.tour-bar > #tour-exit { justify-self: end; }
+.tour-readout {
+  font-family: var(--font-mono);
+  font-size: 1.4rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums; /* steady digit widths so it doesn't jitter */
+  color: var(--event-amber);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.8);
+}
+
+/* speed slider in the control bar */
+.tour-speed-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--ink-dim);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.7);
+}
+#tour-speed {
+  -webkit-appearance: none;
+  appearance: none;
+  width: clamp(90px, 18vw, 180px);
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.25);
+  outline: none;
+  cursor: pointer;
+}
+#tour-speed::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--event-amber);
+  border: none;
+  cursor: pointer;
+}
+#tour-speed::-moz-range-thumb {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--event-amber);
+  border: none;
+  cursor: pointer;
+}
+
+.tour-playhead {
+  position: absolute;
+  top: 42%; /* fallback; JS anchors it over the ribbon while touring */
+  height: 150px;
+  left: 50%; /* fallback; JS tracks it to the actual playhead each frame */
+  width: 2px;
+  transform: translateX(-50%);
+  background: linear-gradient(to bottom,
+    rgba(255, 210, 130, 0), rgba(255, 210, 130, 0.95) 45%, rgba(255, 210, 130, 0));
+  box-shadow: 0 0 10px 1px rgba(255, 200, 120, 0.55);
+}
+
+/* Elden-Ring-style "area reveal" */
+.tour-reveal {
+  position: absolute;
+  left: 0; right: 0;
+  top: 18%; /* fallback; JS anchors it just above the timeline ribbon */
+  text-align: center;
+  opacity: 0;
+}
+.tour-reveal.show { animation: tour-reveal 3.2s ease both; }
+.tour-reveal-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(2rem, 6vw, 4rem);
+  color: #f7f1e3;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.85), 0 0 44px rgba(255, 181, 46, 0.25);
+}
+.tour-reveal-sub {
+  margin-top: 10px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--event-amber);
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.85);
+}
+@keyframes tour-reveal {
+  0%   { opacity: 0; transform: translateY(14px); letter-spacing: 0.3em; }
+  22%  { opacity: 1; transform: translateY(0);    letter-spacing: 0.04em; }
+  72%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-10px); }
+}
+
+/* lower-third caption (event stops, and every beat in reduced-motion mode) */
+.tour-caption {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(24px, 8vh, 84px);
+  transform: translateX(-50%);
+  width: min(560px, calc(100vw - 32px));
+  padding: 20px 24px 18px;
+  background: var(--panel-bg);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+  animation: tour-cap-in 260ms ease both;
+}
+.tour-caption[hidden] { display: none; }
+.tour-caption-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1.4rem;
+  margin: 0;
+}
+.tour-caption-meta {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--event-amber);
+  margin: 4px 0 0;
+}
+.tour-caption-text {
+  margin: 10px 0 0;
+  font-size: 0.96rem;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.tour-caption-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+.tour-continue { border-color: var(--accent); }
+@keyframes tour-cap-in {
+  from { opacity: 0; transform: translate(-50%, 10px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+/* freeze stray hover/click on the timeline while the journey drives it */
+html.touring .event-marker,
+html.touring .period-band,
+html.touring .species-bar { pointer-events: none; }
+
+/* fade the page chrome + dim the timeline for an immersive journey */
+html.touring .topbar,
+html.touring .site-header { opacity: 0; pointer-events: none; }
+html.touring #timeline { opacity: 0.45; }
+
+@media (prefers-reduced-motion: reduce) {
+  .tour-reveal.show { animation: none; opacity: 1; }
+  .tour-caption { animation: none; }
+}
+html.no-motion .tour-reveal.show { animation: none; opacity: 1; }
+html.no-motion .tour-caption { animation: none; }
+
 /* Color swatches */
 .globe-swatches {
   display: flex;
@@ -1364,3 +1625,519 @@ html.no-motion .species-bar.flash {
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; }
 }
+
+/* === EXPERIMENTAL: Journey "living creatures" dock — delete this block to disable === */
+#journey-dock {
+  position: fixed;
+  left: 0; right: 0;
+  bottom: 0;
+  z-index: 82; /* above the tour overlay (80), below the modals (100) */
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 0 clamp(12px, 4vw, 32px) 18px;
+  pointer-events: none;
+}
+.jdock-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  /* collapsed base state = the exit state; .in expands it */
+  max-width: 0;
+  opacity: 0;
+  transform: translateY(28px) scale(0.9);
+  transition: opacity 320ms ease,
+              transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              max-width 320ms ease;
+}
+.jdock-card.in {
+  max-width: 200px;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+.jdock-card img,
+.jdock-card .img-placeholder {
+  width: 164px; height: 164px;
+  object-fit: cover;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+.jdock-name {
+  max-width: 190px;
+  font-family: var(--font-mono);
+  font-size: 0.92rem;
+  font-weight: 500;
+  color: var(--ink);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (prefers-reduced-motion: reduce) {
+  .jdock-card { transition: none; }
+}
+/* === end experimental === */
+
+
+/* ============================================================
+   COSMOS extension — the timeline back to the Big Bang.
+   Everything here is scoped to html.cosmos or cosmos-only ids,
+   so the Earth experience is untouched. Delete this block plus
+   data/cosmos.json to remove the feature entirely.
+   ============================================================ */
+
+/* --- Spacey theme: re-point shared tokens while the VIEW is over the space side.
+   html.space-view is toggled by view position (main.js updateAtmosphere), so the
+   atmosphere reverts to Earth when you scroll/Journey back across the 4.6 Ga seam —
+   even while still "in cosmos mode" (html.cosmos) until Return to Earth. --- */
+html.space-view {
+  --bg: #05010f;
+  --bg-raised: #160a2e;
+  --ink-dim: #9a8fc0;
+  --line: #2a1a4d;
+  --accent: #b06cff;       /* violet rings / present marker / focus */
+}
+body { transition: background-color 600ms ease; }
+.period-ribbon { transition: background-color 600ms ease, border-color 600ms ease; }
+/* Smoothly cross-fade the chrome colours as the atmosphere swaps. */
+.btn-reset { transition: color 500ms ease, border-color 500ms ease, background-color 500ms ease; }
+
+/* Over the space side the ribbon goes translucent so the starfield shimmers through
+   (Earth bands stay opaque on top; only gaps + the cosmic wash reveal stars). */
+html.space-view .period-ribbon {
+  background: rgba(8, 2, 20, 0.42);
+  border-color: var(--line);
+}
+/* Violet vignette instead of the warm one. */
+html.space-view #bg-scrim {
+  background:
+    radial-gradient(120% 90% at 50% 35%, transparent 42%, rgba(4, 1, 14, 0.9) 100%),
+    linear-gradient(to bottom, rgba(8, 2, 24, 0.55) 0%, rgba(8, 2, 24, 0.2) 45%, rgba(4, 1, 14, 0.85) 100%);
+}
+
+/* --- Starfield (behind page content; visible over the space side). Position is driven
+   by the view in main.js for a slower-than-content parallax — no time-based drift. --- */
+#starfield {
+  position: fixed;
+  inset: 0;
+  z-index: -1;            /* above #bg-stage(-2)/#bg-scrim, below in-flow content */
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 800ms ease;
+  background-repeat: repeat;
+  /* 11 layers with prime-ish tile sizes + irregular star positions so the repeat period is
+     huge and never reads as a grid. main.js shifts each layer at its own parallax rate. */
+  background-size:
+    263px 311px, 173px 229px, 331px 277px, 197px 163px, 419px 383px, 151px 211px,
+    277px 347px, 233px 191px, 367px 293px, 139px 181px, 311px 251px;
+  background-position:
+    12px 40px, 120px 30px, 210px 180px, 60px 150px, 300px 90px, 30px 110px,
+    180px 230px, 90px 200px, 250px 40px, 45px 75px, 160px 260px;
+  background-image:
+    radial-gradient(1.7px 1.7px at 41px 73px, rgba(255,255,255,0.95) 50%, transparent),
+    radial-gradient(1.2px 1.2px at 119px 31px, rgba(206,180,255,0.85) 50%, transparent),
+    radial-gradient(2px 2px at 211px 181px, rgba(255,255,255,0.8) 50%, transparent),
+    radial-gradient(1px 1px at 57px 149px, rgba(190,200,255,0.8) 50%, transparent),
+    radial-gradient(2.1px 2.1px at 301px 91px, rgba(255,240,220,0.72) 50%, transparent),
+    radial-gradient(1.1px 1.1px at 29px 113px, rgba(255,255,255,0.78) 50%, transparent),
+    radial-gradient(1.4px 1.4px at 181px 233px, rgba(216,200,255,0.7) 50%, transparent),
+    radial-gradient(0.9px 0.9px at 91px 199px, rgba(255,255,255,0.62) 50%, transparent),
+    radial-gradient(1.6px 1.6px at 251px 43px, rgba(207,224,255,0.68) 50%, transparent),
+    radial-gradient(0.8px 0.8px at 47px 77px, rgba(255,255,255,0.55) 50%, transparent),
+    radial-gradient(1.3px 1.3px at 161px 261px, rgba(255,236,210,0.6) 50%, transparent);
+}
+html.space-view #starfield { opacity: 0.95; }
+
+/* --- Left-edge teaser (click to reveal the cosmos). Sits in the left gutter, just
+   LEFT of the ribbon, so it never overlaps the EON/ERA/PERIOD rank tags. --- */
+#cosmos-teaser {
+  position: absolute;
+  left: clamp(-34px, -2.2vw, -22px); /* in the .timeline-section padding gutter */
+  top: 0;
+  height: 170px;          /* matches the 3-row ribbon */
+  width: clamp(14px, 1.6vw, 22px);
+  z-index: 7;
+  border: 1px solid #3a1f63;
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 0;
+  background:
+    linear-gradient(90deg, #05010f 0%, #1a0b32 70%, rgba(26,11,50,0.4) 100%),
+    radial-gradient(1px 1px at 6px 30px, rgba(255,255,255,0.9) 50%, transparent),
+    radial-gradient(1px 1px at 12px 90px, rgba(200,170,255,0.9) 50%, transparent),
+    radial-gradient(1.2px 1.2px at 8px 140px, rgba(255,255,255,0.8) 50%, transparent);
+  box-shadow: 0 0 7px 1px rgba(140, 90, 255, 0.18); /* subtle by default — no glow/pulse */
+  transition: width 160ms ease, box-shadow 160ms ease;
+}
+#cosmos-teaser[hidden] { display: none; }
+html.cosmos #cosmos-teaser { display: none; } /* gone once revealed */
+#cosmos-teaser:hover,
+#cosmos-teaser:focus-visible {
+  width: clamp(26px, 3vw, 40px);
+  box-shadow: 0 0 26px 4px rgba(160, 110, 255, 0.55);
+  outline: none;
+  animation: cosmos-teaser-pulse 3.2s ease-in-out infinite; /* glow/pulse only on hover */
+}
+.cosmos-teaser-label {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%) rotate(180deg);
+  writing-mode: vertical-rl;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.12em;
+  white-space: nowrap;
+  color: #d9c8ff;
+  text-shadow: 0 1px 4px #000;
+  pointer-events: none;
+  opacity: 0;             /* "more hidden" — label only appears on hover/focus */
+  transition: opacity 160ms ease;
+}
+#cosmos-teaser:hover .cosmos-teaser-label,
+#cosmos-teaser:focus-visible .cosmos-teaser-label { opacity: 1; }
+@keyframes cosmos-teaser-pulse {
+  0%, 100% { box-shadow: 0 0 16px 2px rgba(140, 90, 255, 0.3); }
+  50%      { box-shadow: 0 0 24px 4px rgba(160, 110, 255, 0.55); }
+}
+
+/* --- Cosmic ribbon: smooth translucent gradient wash + transparent bands --- */
+#cosmos-wash {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 0;             /* behind the ribbon rows; cosmos bands are transparent */
+  pointer-events: none;
+  opacity: 0.62;          /* translucent so the starfield shows through */
+  mix-blend-mode: screen;
+}
+/* Cosmos bands carry only a label + hover/focus glow (no solid block, no hard seam). */
+.period-band.cosmos {
+  background: transparent;
+  border-right: none;
+  box-shadow: none;
+}
+.period-band.cosmos::after { content: none; } /* drop the engraved sheen */
+.period-band.cosmos .band-label {
+  color: #efe7ff;
+  text-shadow: 0 1px 6px #000, 0 0 12px rgba(150, 100, 255, 0.5);
+}
+.period-band.cosmos:hover {
+  filter: brightness(1.15);
+  box-shadow: inset 0 0 22px 2px color-mix(in srgb, var(--band-color, #fff) 60%, transparent),
+              0 0 16px 2px color-mix(in srgb, var(--band-color, #fff) 70%, transparent);
+}
+.period-band.cosmos.focused {
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--band-color, #fff) 40%, #fff),
+              inset 0 0 26px 3px color-mix(in srgb, var(--band-color, #fff) 55%, transparent);
+}
+
+/* --- Cosmic event markers (cyan, to read over the purple wash) --- */
+.event-marker.cosmos { background: #45e0ff; }
+.event-marker.cosmos:hover,
+.event-marker.cosmos:focus-visible {
+  box-shadow: 0 0 9px 2px rgba(69, 224, 255, 0.7);
+}
+.event-marker.cosmos.flash {
+  animation: event-flash-cosmos 1.6s ease-out;
+}
+@keyframes event-flash-cosmos {
+  0%, 100% { transform: translate(-50%, -50%) rotate(45deg) scale(1); box-shadow: 0 0 0 0 rgba(69,224,255,0); }
+  15%      { transform: translate(-50%, -50%) rotate(45deg) scale(1.6); box-shadow: 0 0 12px 3px rgba(69,224,255,0.9); }
+  70%      { transform: translate(-50%, -50%) rotate(45deg) scale(1.3); box-shadow: 0 0 9px 2px rgba(69,224,255,0.6); }
+}
+
+/* --- Seam veil at 4.6 Ga (cosmos hands over to Earth) --- */
+#cosmos-seam {
+  position: absolute;
+  top: 0;
+  height: 198px;          /* ribbon + a little of the axis */
+  width: 46px;
+  transform: translateX(-50%);
+  z-index: 6;
+  pointer-events: none;
+  display: none;
+  background: linear-gradient(
+    90deg,
+    rgba(80, 50, 140, 0) 0%,
+    rgba(120, 80, 200, 0.28) 45%,
+    rgba(220, 200, 255, 0.55) 50%,
+    rgba(120, 80, 200, 0.18) 55%,
+    rgba(80, 50, 140, 0) 100%
+  );
+}
+#cosmos-seam::after {        /* bright hairline exactly at the boundary */
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(to bottom, rgba(230,215,255,0.9), rgba(230,215,255,0.1));
+}
+.cosmos-seam-label {
+  position: absolute;
+  left: 50%;
+  top: -16px;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-family: var(--font-mono);
+  font-size: 0.6rem;
+  letter-spacing: 0.04em;
+  color: #d9c8ff;
+  text-shadow: 0 1px 4px #000;
+}
+
+/* --- Big Bang burst (anchored at 13.8 Ga; plays on reveal) --- */
+#bigbang {
+  position: absolute;
+  top: 85px;              /* vertically mid-ribbon */
+  width: 0;
+  height: 0;
+  z-index: 9;
+  pointer-events: none;
+  display: none;
+}
+#bigbang .bb-core,
+#bigbang .bb-shock,
+#bigbang .bb-flash {
+  position: absolute;
+  left: 0;
+  top: 0;
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0);
+}
+/* Explosion colours: white-hot core → orange → red. The purple comes afterward,
+   from the theme/wash the reveal settles into. */
+#bigbang .bb-core {
+  width: 28px; height: 28px;
+  background: radial-gradient(circle, #ffffff 0%, #ffe6b0 38%, #ff7a2a 70%, #ff3b1f 90%, transparent 100%);
+  box-shadow: 0 0 34px 12px rgba(255, 180, 90, 0.85);
+}
+#bigbang .bb-shock {
+  width: 60px; height: 60px;
+  border: 2px solid rgba(255, 220, 170, 0.95);
+  background: radial-gradient(circle, transparent 55%, rgba(255,120,50,0.28) 70%, transparent 100%);
+}
+#bigbang .bb-flash {
+  width: 120px; height: 120px;
+  background: radial-gradient(circle, rgba(255,255,255,0.95) 0%, rgba(255,150,70,0.45) 35%, transparent 70%);
+}
+#bigbang.playing .bb-core  { animation: bb-core 1.7s ease-out both; }
+#bigbang.playing .bb-shock { animation: bb-shock 1.7s ease-out both; }
+#bigbang.playing .bb-flash { animation: bb-flash 0.9s ease-out both; }
+@keyframes bb-core {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0); }
+  18%  { opacity: 1; transform: translate(-50%, -50%) scale(1.5); }
+  60%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0.85; transform: translate(-50%, -50%) scale(1); }
+}
+@keyframes bb-shock {
+  0%   { opacity: 0.9; transform: translate(-50%, -50%) scale(0); }
+  70%  { opacity: 0.5; }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(7); }
+}
+@keyframes bb-flash {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+  25%  { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(2.4); }
+}
+
+/* --- Reveal: the ribbon grows from the Big Bang point in a curved (C-shape) front.
+   A circle expanding from the left-centre apex reveals the ribbon; its arc edge is the
+   cone/funnel mouth opening into the full straight timeline. --- */
+#timeline.cosmos-revealing #period-ribbon { animation: cosmos-grow 1.4s ease-out both; }
+#timeline.cosmos-revealing #time-axis,
+#timeline.cosmos-revealing #event-markers,
+#timeline.cosmos-revealing #cosmos-seam { animation: cosmos-fadein 1.4s ease-out both; }
+/* A funnel: from a point at the Big Bang apex (left-centre) it opens into a cone (apex left,
+   full-height right) and finally squares off into the full ribbon — the timeline "expanding". */
+@keyframes cosmos-grow {
+  0%   { clip-path: polygon(0% 50%, 0% 50%, 0% 50%, 0% 50%); }
+  55%  { clip-path: polygon(0% 50%, 100% 0%, 100% 100%, 0% 50%); }
+  100% { clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%); }
+}
+@keyframes cosmos-fadein { from { opacity: 0; } to { opacity: 1; } }
+
+/* --- Jump-to + Events lists: hide space entries until the cosmos has been activated --- */
+html:not(.cosmos) .jump-group[data-realm="cosmos"] { display: none; }
+html:not(.cosmos) .jump-row[data-realm="cosmos"] { display: none; }
+html:not(.cosmos) .event-group[data-realm="cosmos"] { display: none; }
+html:not(.cosmos) .event-row[data-realm="cosmos"] { display: none; }
+
+/* --- Return to Earth: its own line above "Jump to", only while in cosmos mode --- */
+.return-earth-row { flex-basis: 100%; }            /* forces the jump menu onto the next line */
+.return-earth-row:has(> [hidden]) { display: none; } /* collapse the line when the button is hidden */
+#return-earth {
+  border-color: var(--accent);                     /* accent outline so it stands out (violet in space) */
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Reduced motion: no drift / no burst / no grow-in — a static warm starburst remains. */
+@media (prefers-reduced-motion: reduce) {
+  #cosmos-teaser, #cosmos-teaser:hover, #cosmos-teaser:focus-visible { animation: none; }
+  #bigbang.playing .bb-core { animation: none; opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+  #bigbang.playing .bb-shock,
+  #bigbang.playing .bb-flash { animation: none; opacity: 0; }
+  #timeline.cosmos-revealing #period-ribbon { animation: none; clip-path: none; }
+  #timeline.cosmos-revealing #time-axis,
+  #timeline.cosmos-revealing #event-markers,
+  #timeline.cosmos-revealing #cosmos-seam { animation: none; }
+}
+html.no-motion #cosmos-teaser,
+html.no-motion #cosmos-teaser:hover,
+html.no-motion #cosmos-teaser:focus-visible { animation: none; }
+html.no-motion #bigbang.playing .bb-core { animation: none; opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+html.no-motion #bigbang.playing .bb-shock,
+html.no-motion #bigbang.playing .bb-flash { animation: none; opacity: 0; }
+html.no-motion #timeline.cosmos-revealing #period-ribbon { animation: none; clip-path: none; }
+html.no-motion #timeline.cosmos-revealing #time-axis,
+html.no-motion #timeline.cosmos-revealing #event-markers,
+html.no-motion #timeline.cosmos-revealing #cosmos-seam { animation: none; }
+
+
+/* ============================================================
+   EXPERIMENTAL: default background — option 2, "drifting aurora".
+   Self-contained: delete the #bg-aurora element (index.html) and this
+   whole block to remove. Nothing else references it.
+
+   Three large, blurred, low-opacity colour blobs (matching the existing
+   geologic palette — amber/teal/rust, not the cosmos purple) drift and
+   breathe very slowly behind the page. Layered BEHIND #bg-stage(-2)/
+   #bg-scrim(-1), so a focused period's photo automatically covers it,
+   and it fades out while the cosmic atmosphere (html.space-view) is
+   active so it never fights the starfield/purple theme.
+   ============================================================ */
+#bg-aurora {
+  position: fixed;
+  inset: 0;
+  z-index: -3;            /* behind #bg-stage(-2) — a focused period's photo covers it for free */
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 600ms ease;
+}
+html.space-view #bg-aurora { opacity: 0; } /* defer to the cosmic starfield/theme while over the space side */
+
+.aurora-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(48px); /* was 70px — visually near-identical, ~30% cheaper to composite */
+  contain: paint;     /* isolate the blur's repaint cost from the rest of the page */
+  will-change: transform;
+}
+.aurora-a {
+  width: 62vw; height: 62vw;
+  left: -10vw; top: -14vw;
+  background: radial-gradient(circle, rgba(240, 185, 90, 0.22) 0%, rgba(240, 185, 90, 0) 70%);
+  animation: aurora-drift-a 26s ease-in-out infinite alternate;
+}
+.aurora-b {
+  width: 54vw; height: 54vw;
+  right: -12vw; top: 18vw;
+  background: radial-gradient(circle, rgba(95, 210, 191, 0.18) 0%, rgba(95, 210, 191, 0) 70%);
+  animation: aurora-drift-b 32s ease-in-out infinite alternate;
+}
+.aurora-c {
+  width: 46vw; height: 46vw;
+  left: 22vw; bottom: -16vw;
+  background: radial-gradient(circle, rgba(178, 58, 34, 0.16) 0%, rgba(178, 58, 34, 0) 70%);
+  animation: aurora-drift-c 38s ease-in-out infinite alternate;
+}
+@keyframes aurora-drift-a {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(4vw, 5vw) scale(1.08); }
+}
+@keyframes aurora-drift-b {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(-5vw, -4vw) scale(1.06); }
+}
+@keyframes aurora-drift-c {
+  from { transform: translate(0, 0) scale(1); }
+  to   { transform: translate(3vw, -6vw) scale(1.1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .aurora-blob { animation: none; }
+}
+html.no-motion .aurora-blob { animation: none; }
+/* === end experimental: aurora background === */
+
+
+/* ============================================================
+   EXPERIMENTAL: default background — drifting dust motes.
+   Self-contained: delete the #bg-motes element (index.html) and this
+   whole block to remove. Nothing else references it.
+
+   Two sparse particle layers rising at different speeds (near = faster/
+   larger, far = slower/smaller). Each layer is a tiled background moved
+   with `transform: translateY` — GPU-composited, no per-frame repaint
+   (deliberately NOT a background-position animation). The travel distance
+   equals exactly ONE background tile height, so the loop is seamless; the
+   layer is one tile taller than the viewport so no gap scrolls in.
+   Sits at z-index -3 with the aurora (later in DOM → paints above it),
+   still behind #bg-stage(-2), so a focused period's photo covers both.
+   ============================================================ */
+#bg-motes {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 600ms ease;
+}
+html.space-view #bg-motes { opacity: 0; } /* defer to the cosmic starfield over the space side */
+
+.mote-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  background-repeat: repeat;
+  will-change: transform;
+}
+.mote-near {
+  height: calc(100% + 421px);   /* viewport + one tile, so the loop never shows a gap */
+  opacity: 0.4;
+  background-size: 293px 421px; /* prime-ish tile so the pattern doesn't read as a grid */
+  background-image:
+    radial-gradient(2.2px 2.2px at 41px 87px, rgba(240, 200, 140, 0.8) 50%, transparent),
+    radial-gradient(1.8px 1.8px at 181px 293px, rgba(240, 200, 140, 0.55) 50%, transparent),
+    radial-gradient(2px 2px at 247px 173px, rgba(215, 225, 205, 0.5) 50%, transparent),
+    radial-gradient(1.6px 1.6px at 97px 371px, rgba(240, 210, 160, 0.6) 50%, transparent);
+  animation: motes-rise-near 60s linear infinite;
+}
+.mote-far {
+  height: calc(100% + 347px);
+  opacity: 0.3;
+  background-size: 227px 347px;
+  background-image:
+    radial-gradient(1.4px 1.4px at 67px 131px, rgba(240, 200, 140, 0.6) 50%, transparent),
+    radial-gradient(1.2px 1.2px at 157px 43px, rgba(95, 210, 191, 0.45) 50%, transparent),
+    radial-gradient(1.5px 1.5px at 199px 251px, rgba(240, 220, 180, 0.5) 50%, transparent),
+    radial-gradient(1.1px 1.1px at 29px 307px, rgba(230, 210, 180, 0.45) 50%, transparent);
+  animation: motes-rise-far 95s linear infinite;
+}
+/* Rise by exactly one tile height → the pattern lines up and the loop is invisible. */
+@keyframes motes-rise-near {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-421px); }
+}
+@keyframes motes-rise-far {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-347px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mote-layer { animation: none; transform: none; }
+}
+html.no-motion .mote-layer { animation: none; transform: none; }
+/* === end experimental: dust motes === */
+/* === end cosmos === */

@@ -22,8 +22,7 @@ export class AmbientAudio {
     this.enabled = localStorage.getItem(STORAGE_KEY) === "on";
     this.currentUnit = null; // last-focused unit (for enabling later)
     this.currentSrc = null;
-    this.audio = null; // active HTMLAudioElement
-    this._fadeRaf = null;
+    this.audio = null; // active HTMLAudioElement (fade handles live on the elements)
   }
 
   get isEnabled() {
@@ -80,18 +79,23 @@ export class AmbientAudio {
   }
 
   #fade(el, target, done) {
+    // Supersede any in-flight fade on THIS element (rapid toggles/unit switches would
+    // otherwise stack rAF loops fighting over volume). Per-element on purpose — a
+    // crossfade legitimately runs two fades at once (old track out, new track in).
+    if (el._fadeRaf) cancelAnimationFrame(el._fadeRaf);
     const from = el.volume;
     const t0 = performance.now();
     const step = (now) => {
       const k = Math.min((now - t0) / FADE_MS, 1);
       el.volume = Math.max(0, Math.min(1, from + (target - from) * k));
       if (k < 1) {
-        requestAnimationFrame(step);
-      } else if (done) {
-        done();
+        el._fadeRaf = requestAnimationFrame(step);
+      } else {
+        el._fadeRaf = null;
+        if (done) done();
       }
     };
-    requestAnimationFrame(step);
+    el._fadeRaf = requestAnimationFrame(step);
   }
 
   #resolveAudio(unit) {

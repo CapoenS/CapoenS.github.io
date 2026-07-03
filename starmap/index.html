@@ -1,0 +1,1057 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Star Map — Deep Time</title>
+<link rel="manifest" href="./manifest.json">
+<script src="./support.js"></script>
+<script>
+  // Offline/PWA support. Scope "./" = /starmap/ only — never touches the main site.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+      navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
+    });
+  }
+</script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;height:100%;background:#03060e;overflow:hidden;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;}
+  input{font-family:inherit;}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-thumb{background:rgba(150,170,210,0.25);border-radius:4px;}
+  input[type=range]{-webkit-appearance:none;appearance:none;height:4px;border-radius:2px;background:var(--sk-border,rgba(120,150,210,0.3));outline:none;}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--sk-accent,#e7b35a);cursor:pointer;border:2px solid rgba(0,0,0,0.35);}
+  input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;background:var(--sk-accent,#e7b35a);cursor:pointer;border:none;}
+  @keyframes skFade{from{opacity:0;}to{opacity:1;}}
+</style>
+</helmet>
+
+<div ref="{{ setRoot }}" style="position:relative;width:100%;height:100vh;background:#03060e;overflow:hidden;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;color:var(--sk-fg,#d4ddf0);-webkit-user-select:none;user-select:none;touch-action:none;">
+
+  <canvas ref="{{ setCanvas }}" style="position:absolute;inset:0;width:100%;height:100%;display:block;cursor:grab;"></canvas>
+
+  <!-- top-left: location + clock -->
+  <div style="position:absolute;top:14px;left:14px;display:flex;flex-direction:column;gap:8px;align-items:flex-start;z-index:6;">
+    <button onClick="{{ openLoc }}" style="display:flex;align-items:center;gap:7px;padding:8px 13px;border-radius:999px;background:var(--sk-panel,rgba(10,14,26,0.82));border:1px solid var(--sk-border,rgba(120,150,210,0.22));color:var(--sk-fg,#d4ddf0);font-size:13px;font-weight:500;backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);">
+      <span style="width:7px;height:7px;border-radius:50%;background:var(--sk-accent,#e7b35a);display:inline-block;"></span>
+      {{ locName }}
+    </button>
+    <div style="padding:9px 13px;border-radius:14px;background:var(--sk-panel,rgba(10,14,26,0.82));border:1px solid var(--sk-border,rgba(120,150,210,0.22));backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);font-family:ui-monospace,'SF Mono',Menlo,monospace;">
+      <div style="font-size:21px;letter-spacing:0.5px;line-height:1;">{{ clockText }}</div>
+      <div style="font-size:11px;color:var(--sk-muted,#7e8aa6);margin-top:5px;">{{ dateText }}</div>
+      <div style="font-size:11px;color:var(--sk-accent,#e7b35a);margin-top:4px;">{{ sunStatus }}</div>
+    </div>
+    <!-- vertical toggle menu, below the clock -->
+    <div style="display:flex;flex-direction:column;gap:6px;width:154px;margin-top:2px;">
+      <button onClick="{{ toggleCon }}" style="{{ conChip }}">Constellations</button>
+      <button onClick="{{ toggleLabels }}" style="{{ labelChip }}">Star names</button>
+      <button onClick="{{ toggleDso }}" style="{{ dsoChip }}">Deep sky</button>
+      <button onClick="{{ toggleGrid }}" style="{{ gridChip }}">Grid</button>
+      <button onClick="{{ toggleTonight }}" style="{{ tonightChip }}">Tonight</button>
+      <button onClick="{{ toggleMeasure }}" style="{{ measureChip }}">Measure</button>
+      <button onClick="{{ openScope }}" style="{{ scopeChip }}">Scope</button>
+      <button onClick="{{ toggleLog }}" style="{{ logChip }}">Log</button>
+    </div>
+  </div>
+
+  <!-- top-right: find + red + field helpers -->
+  <div style="position:absolute;top:14px;right:14px;display:flex;gap:8px;z-index:6;">
+    <button onClick="{{ openSearch }}" style="{{ findChip }}">Find</button>
+    <button onClick="{{ toggleRed }}" style="{{ redChip }}">Red light</button>
+    <sc-if value="{{ wakeSupported }}" hint-placeholder-val="{{ false }}">
+      <button onClick="{{ toggleAwake }}" style="{{ awakeChip }}">Keep awake</button>
+    </sc-if>
+    <button onClick="{{ toggleFullscreen }}" style="{{ fsChip }}" title="Fullscreen">⛶</button>
+  </div>
+
+  <!-- time scrubber -->
+  <div style="position:absolute;bottom:62px;left:0;right:0;display:flex;justify-content:center;z-index:6;pointer-events:none;">
+    <div style="display:flex;align-items:center;gap:11px;padding:8px 14px;border-radius:999px;background:var(--sk-panel,rgba(10,14,26,0.82));border:1px solid var(--sk-border,rgba(120,150,210,0.22));backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);pointer-events:auto;">
+      <button onClick="{{ resetTime }}" style="font-size:12px;font-weight:600;color:var(--sk-accent,#e7b35a);padding:2px 4px;">Now</button>
+      <input type="range" min="-12" max="12" step="0.25" value="{{ offsetH }}" onInput="{{ onTimeInput }}" style="width:180px;">
+      <span style="font-size:12px;color:var(--sk-muted,#7e8aa6);min-width:74px;text-align:right;font-family:ui-monospace,monospace;">{{ timeLabel }}</span>
+    </div>
+  </div>
+
+  <!-- selected object card -->
+  <sc-if value="{{ selectedCard }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ cardStyle }}">
+      <button onClick="{{ clearSelected }}" style="position:absolute;top:10px;right:12px;font-size:18px;line-height:1;color:var(--sk-muted,#7e8aa6);width:24px;height:24px;">×</button>
+      <div style="font-size:19px;font-weight:600;padding-right:24px;">{{ selectedCard.name }}</div>
+      <div style="font-size:12px;color:var(--sk-muted,#7e8aa6);margin-top:3px;">{{ selectedCard.typeLabel }}</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-top:11px;font-size:13px;color:var(--sk-accent,#e7b35a);font-weight:500;">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--sk-accent,#e7b35a);"></span>{{ selectedCard.locateText }}
+      </div>
+      <div style="font-size:12px;color:var(--sk-muted,#7e8aa6);margin-top:6px;font-family:ui-monospace,monospace;">{{ selectedCard.detail }}</div>
+      <sc-if value="{{ selectedCard.times }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:11.5px;color:var(--sk-muted,#7e8aa6);margin-top:6px;font-family:ui-monospace,monospace;line-height:1.5;">{{ selectedCard.times }}</div>
+      </sc-if>
+      <sc-if value="{{ selectedCard.best }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:11.5px;color:var(--sk-accent,#e7b35a);margin-top:4px;font-family:ui-monospace,monospace;">{{ selectedCard.best }}</div>
+      </sc-if>
+      <sc-if value="{{ selectedCard.moonWarn }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:11.5px;color:#e8a03a;margin-top:6px;line-height:1.45;">{{ selectedCard.moonWarn }}</div>
+      </sc-if>
+      <sc-if value="{{ selectedCard.note }}" hint-placeholder-val="{{ false }}">
+        <div style="font-size:12.5px;line-height:1.5;color:var(--sk-fg,#d4ddf0);opacity:0.82;margin-top:10px;">{{ selectedCard.note }}</div>
+      </sc-if>
+      <sc-if value="{{ selectedCard.canLog }}" hint-placeholder-val="{{ false }}">
+        <button onClick="{{ toggleObserved }}" style="{{ observedBtn }}">{{ observedLabel }}</button>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- tonight panel -->
+  <sc-if value="{{ tonight }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ tonightPanelStyle }}">
+      <div style="font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--sk-muted,#7e8aa6);margin-bottom:2px;">Tonight · best targets</div>
+      <div style="font-size:12.5px;color:var(--sk-accent,#e7b35a);margin-bottom:10px;">{{ sunStatus }}</div>
+      <div style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:6px;">
+        <sc-for list="{{ tonightList }}" as="t" hint-placeholder-count="5">
+          <button onClick="{{ t.onClick }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;padding:9px 11px;border-radius:11px;background:var(--sk-chip,rgba(255,255,255,0.05));border:1px solid var(--sk-border,rgba(120,150,210,0.18));width:100%;">
+            <span style="font-size:13.5px;font-weight:500;color:var(--sk-fg,#d4ddf0);">{{ t.name }}</span>
+            <span style="font-size:11px;color:var(--sk-muted,#7e8aa6);font-family:ui-monospace,monospace;white-space:nowrap;">{{ t.meta }}</span>
+          </button>
+        </sc-for>
+        <sc-if value="{{ tonightEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:12.5px;color:var(--sk-muted,#7e8aa6);line-height:1.5;padding:6px 2px;">{{ tonightEmptyText }}</div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- search overlay -->
+  <sc-if value="{{ searchOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeSearch }}" style="position:absolute;inset:0;background:rgba(2,4,10,0.55);z-index:20;animation:skFade .15s ease;"></div>
+    <div style="position:absolute;top:64px;left:50%;transform:translateX(-50%);width:min(440px,calc(100% - 28px));z-index:21;background:var(--sk-panel2,rgba(18,24,42,0.96));border:1px solid var(--sk-border,rgba(120,150,210,0.22));border-radius:16px;padding:12px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 20px 60px rgba(0,0,0,0.5);animation:skFade .15s ease;">
+      <input ref="{{ setSearchInput }}" value="{{ query }}" onInput="{{ onQuery }}" placeholder="Search stars, planets, deep-sky…" style="width:100%;padding:11px 13px;border-radius:11px;background:rgba(0,0,0,0.25);border:1px solid var(--sk-border,rgba(120,150,210,0.22));color:var(--sk-fg,#d4ddf0);font-size:15px;outline:none;">
+      <div style="margin-top:9px;max-height:46vh;overflow-y:auto;display:flex;flex-direction:column;gap:4px;">
+        <sc-for list="{{ results }}" as="r" hint-placeholder-count="6">
+          <button onClick="{{ r.onClick }}" style="display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;padding:10px 12px;border-radius:10px;background:var(--sk-chip,rgba(255,255,255,0.04));width:100%;">
+            <span style="font-size:14px;color:var(--sk-fg,#d4ddf0);">{{ r.name }}</span>
+            <span style="font-size:11px;color:var(--sk-muted,#7e8aa6);font-family:ui-monospace,monospace;white-space:nowrap;">{{ r.meta }}</span>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- location modal -->
+  <sc-if value="{{ locOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeLoc }}" style="position:absolute;inset:0;background:rgba(2,4,10,0.55);z-index:20;animation:skFade .15s ease;"></div>
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(420px,calc(100% - 28px));max-height:80vh;z-index:21;background:var(--sk-panel2,rgba(18,24,42,0.96));border:1px solid var(--sk-border,rgba(120,150,210,0.22));border-radius:18px;padding:18px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 20px 60px rgba(0,0,0,0.5);display:flex;flex-direction:column;animation:skFade .15s ease;">
+      <div style="font-size:17px;font-weight:600;margin-bottom:3px;">Observing location</div>
+      <div style="font-size:12px;color:var(--sk-muted,#7e8aa6);margin-bottom:14px;">The sky is computed for this spot and your device clock.</div>
+      <button onClick="{{ useMyLoc }}" style="padding:11px;border-radius:11px;background:var(--sk-accent,#e7b35a);color:var(--sk-accent-fg,#1a1206);font-size:13.5px;font-weight:600;margin-bottom:14px;">Use my current location</button>
+      <div style="overflow-y:auto;display:flex;flex-direction:column;gap:5px;flex:1;">
+        <sc-for list="{{ locations }}" as="loc" hint-placeholder-count="6">
+          <button onClick="{{ loc.onClick }}" style="text-align:left;padding:10px 12px;border-radius:10px;background:var(--sk-chip,rgba(255,255,255,0.04));border:1px solid var(--sk-border,rgba(120,150,210,0.16));font-size:14px;color:var(--sk-fg,#d4ddf0);width:100%;">{{ loc.name }}</button>
+        </sc-for>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:14px;align-items:flex-end;">
+        <label style="flex:1;font-size:11px;color:var(--sk-muted,#7e8aa6);">Latitude<input value="{{ manualLat }}" onInput="{{ onManualLat }}" placeholder="51.21" style="width:100%;margin-top:4px;padding:9px 10px;border-radius:9px;background:rgba(0,0,0,0.25);border:1px solid var(--sk-border,rgba(120,150,210,0.22));color:var(--sk-fg,#d4ddf0);font-size:14px;outline:none;"></label>
+        <label style="flex:1;font-size:11px;color:var(--sk-muted,#7e8aa6);">Longitude<input value="{{ manualLon }}" onInput="{{ onManualLon }}" placeholder="3.22" style="width:100%;margin-top:4px;padding:9px 10px;border-radius:9px;background:rgba(0,0,0,0.25);border:1px solid var(--sk-border,rgba(120,150,210,0.22));color:var(--sk-fg,#d4ddf0);font-size:14px;outline:none;"></label>
+        <button onClick="{{ applyManual }}" style="padding:9px 14px;border-radius:9px;background:var(--sk-chip,rgba(255,255,255,0.08));border:1px solid var(--sk-border,rgba(120,150,210,0.22));font-size:13px;font-weight:600;color:var(--sk-fg,#d4ddf0);">Set</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- telescope / eyepiece settings modal -->
+  <sc-if value="{{ scopeOpen }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ closeScope }}" style="position:absolute;inset:0;background:rgba(2,4,10,0.55);z-index:20;animation:skFade .15s ease;"></div>
+    <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:min(400px,calc(100% - 28px));max-height:80vh;z-index:21;background:var(--sk-panel2,rgba(18,24,42,0.96));border:1px solid var(--sk-border,rgba(120,150,210,0.22));border-radius:18px;padding:18px;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);box-shadow:0 20px 60px rgba(0,0,0,0.5);display:flex;flex-direction:column;overflow-y:auto;animation:skFade .15s ease;">
+      <div style="font-size:17px;font-weight:600;margin-bottom:3px;">Telescope &amp; eyepieces</div>
+      <div style="font-size:12px;color:var(--sk-muted,#7e8aa6);margin-bottom:14px;">Select an object to see Telrad + true-field circles at your eyepieces' scale.</div>
+      <label style="font-size:11px;color:var(--sk-muted,#7e8aa6);">Telescope focal length (mm)
+        <input value="{{ scopeFl }}" onInput="{{ onScopeFl }}" placeholder="1200" style="width:100%;margin-top:4px;padding:9px 10px;border-radius:9px;background:rgba(0,0,0,0.25);border:1px solid var(--sk-border,rgba(120,150,210,0.22));color:var(--sk-fg,#d4ddf0);font-size:14px;outline:none;">
+      </label>
+      <div style="font-size:11px;color:var(--sk-muted,#7e8aa6);margin-top:14px;margin-bottom:5px;">Eyepieces — focal length (mm) · apparent FOV (°)</div>
+      <sc-for list="{{ epRows }}" as="ep" hint-placeholder-count="2">
+        <div style="display:flex;gap:8px;margin-bottom:6px;align-items:center;">
+          <input value="{{ ep.fl }}" onInput="{{ ep.onFl }}" style="flex:1;min-width:0;padding:8px 10px;border-radius:9px;background:rgba(0,0,0,0.25);border:1px solid var(--sk-border,rgba(120,150,210,0.22));color:var(--sk-fg,#d4ddf0);font-size:14px;outline:none;">
+          <input value="{{ ep.afov }}" onInput="{{ ep.onAfov }}" style="flex:1;min-width:0;padding:8px 10px;border-radius:9px;background:rgba(0,0,0,0.25);border:1px solid var(--sk-border,rgba(120,150,210,0.22));color:var(--sk-fg,#d4ddf0);font-size:14px;outline:none;">
+          <span style="font-size:11px;color:var(--sk-muted,#7e8aa6);font-family:ui-monospace,monospace;white-space:nowrap;min-width:74px;flex-shrink:0;">{{ ep.meta }}</span>
+          <button onClick="{{ ep.onRemove }}" title="Remove eyepiece" style="width:26px;height:26px;flex-shrink:0;border-radius:50%;background:var(--sk-chip,rgba(255,255,255,0.06));border:1px solid var(--sk-border,rgba(120,150,210,0.22));color:var(--sk-fg,#d4ddf0);font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;">×</button>
+        </div>
+      </sc-for>
+      <button onClick="{{ addEyepiece }}" style="margin-top:4px;padding:9px;border-radius:9px;background:var(--sk-chip,rgba(255,255,255,0.06));border:1px solid var(--sk-border,rgba(120,150,210,0.22));font-size:13px;color:var(--sk-fg,#d4ddf0);">+ Add eyepiece</button>
+      <button onClick="{{ toggleTelrad }}" style="{{ telradBtn }}">Telrad rings (0.5° · 2° · 4°)</button>
+    </div>
+  </sc-if>
+
+  <!-- observation log panel -->
+  <sc-if value="{{ logOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="{{ logPanelStyle }}">
+      <div style="font-size:11px;letter-spacing:1.4px;text-transform:uppercase;color:var(--sk-muted,#7e8aa6);margin-bottom:2px;">Observing log</div>
+      <div style="font-size:12.5px;color:var(--sk-accent,#e7b35a);margin-bottom:10px;">{{ logProgress }}</div>
+      <div style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:6px;">
+        <sc-for list="{{ logList }}" as="lg" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:6px;">
+            <button onClick="{{ lg.onClick }}" style="flex:1;display:flex;align-items:center;justify-content:space-between;gap:10px;text-align:left;padding:9px 11px;border-radius:11px;background:var(--sk-chip,rgba(255,255,255,0.05));border:1px solid var(--sk-border,rgba(120,150,210,0.18));">
+              <span style="font-size:13.5px;font-weight:500;color:var(--sk-fg,#d4ddf0);">{{ lg.name }}</span>
+              <span style="font-size:11px;color:var(--sk-muted,#7e8aa6);font-family:ui-monospace,monospace;white-space:nowrap;">{{ lg.date }}</span>
+            </button>
+            <button onClick="{{ lg.onRemove }}" title="Remove from log" style="width:26px;height:26px;flex-shrink:0;border-radius:50%;background:var(--sk-chip,rgba(255,255,255,0.06));border:1px solid var(--sk-border,rgba(120,150,210,0.22));color:var(--sk-fg,#d4ddf0);font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;">×</button>
+          </div>
+        </sc-for>
+        <sc-if value="{{ logEmpty }}" hint-placeholder-val="{{ false }}">
+          <div style="font-size:12.5px;color:var(--sk-muted,#7e8aa6);line-height:1.5;padding:6px 2px;">Nothing logged yet — select an object and tap "Mark observed" after you've seen it.</div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1280,&quot;height&quot;:820},&quot;accent&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#e7b35a&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#e7b35a&quot;,&quot;#6fb1e0&quot;,&quot;#7fce9a&quot;,&quot;#c98bdb&quot;]},&quot;startRedLight&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;Defaults&quot;},&quot;startMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;full&quot;,&quot;options&quot;:[&quot;full&quot;,&quot;tonight&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Defaults&quot;}}">
+class Component extends DCLogic {
+  state = {
+    red:false, tonight:false, con:true, labels:true, dso:true, grid:false,
+    narrow:false, locName:"Brugge, West-Flanders", lat:51.21, lon:3.22,
+    locOpen:false, searchOpen:false, query:"", selected:null,
+    offsetH:0, manualLat:"", manualLon:"", tickN:0, loaded:false,
+    // telescope toolkit + field usability
+    scopeOpen:false, logOpen:false, measure:false, measureA:null, measureB:null,
+    awake:false, fs:false, obsN:0,
+    scopeCfg:{ fl:1200, eps:[{fl:25,afov:52},{fl:10,afov:52}], telrad:true }
+  };
+
+  setRoot = (el) => { this.rootEl = el; if (el) this.applyTheme(); };
+  setCanvas = (el) => { this.canvas = el; };
+  setSearchInput = (el) => { this.searchEl = el; };
+
+  scale = 1; panX = 0; panY = 0; pointers = new Map(); _raf = null; _moved = false;
+
+  async componentDidMount() {
+    const [astro, data] = await Promise.all([import('./astro.js'), import('./skydata.js')]);
+    this.astro = astro; this.data = data;
+    this.locations = data.LOCATIONS.map(l => ({ name: l.name, onClick: () => this.pickLoc(l) }));
+    this.setupCanvas();
+    window.addEventListener('resize', this.onResize);
+    this.onResize();
+    const init = {};
+    if (this.props.startRedLight) init.red = true;
+    if (this.props.startMode === 'tonight') init.tonight = true;
+    // Restore persisted telescope config + observation log.
+    try {
+      const sc = JSON.parse(localStorage.getItem('sk-scope'));
+      if (sc && isFinite(sc.fl) && Array.isArray(sc.eps)) init.scopeCfg = sc;
+    } catch (e) {}
+    try { this._observed = JSON.parse(localStorage.getItem('sk-log')) || {}; }
+    catch (e) { this._observed = {}; }
+    init.loaded = true;
+    this.setState(init, () => { this.applyTheme(); });
+    document.addEventListener('fullscreenchange', this.onFsChange);
+    document.addEventListener('visibilitychange', this.onVisibility);
+    this.tick();
+    this.timer = setInterval(this.tick, 1000);
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.timer);
+    window.removeEventListener('resize', this.onResize);
+    document.removeEventListener('fullscreenchange', this.onFsChange);
+    document.removeEventListener('visibilitychange', this.onVisibility);
+    if (this._wakeLock) { try { this._wakeLock.release(); } catch (e) {} }
+  }
+
+  componentDidUpdate(prevProps, prevState) {
+    if (prevState.red !== this.state.red) this.applyTheme();
+    if (this.state.searchOpen && !prevState.searchOpen && this.searchEl) {
+      try { this.searchEl.focus(); } catch (e) {}
+    }
+    this.draw();
+  }
+
+  tick = () => { this.setState(s => ({ tickN: s.tickN + 1 })); this.requestDraw(); };
+
+  getDate() { return new Date(Date.now() + this.state.offsetH * 3600 * 1000); }
+
+  applyTheme() {
+    if (!this.rootEl) return;
+    const r = this.state.red;
+    const accent = this.props.accent || '#e7b35a';
+    const v = r ? {
+      '--sk-fg':'#ff6a48','--sk-muted':'#9c3f2c','--sk-panel':'rgba(12,2,2,0.86)','--sk-panel2':'rgba(24,5,5,0.95)',
+      '--sk-border':'rgba(255,70,45,0.26)','--sk-accent':'#ff5a3c','--sk-accent-fg':'#1a0303','--sk-chip':'rgba(255,50,30,0.08)'
+    } : {
+      '--sk-fg':'#d4ddf0','--sk-muted':'#7e8aa6','--sk-panel':'rgba(10,14,26,0.82)','--sk-panel2':'rgba(18,24,42,0.96)',
+      '--sk-border':'rgba(120,150,210,0.22)','--sk-accent':accent,'--sk-accent-fg':'#150f04','--sk-chip':'rgba(255,255,255,0.06)'
+    };
+    for (const k in v) this.rootEl.style.setProperty(k, v[k]);
+  }
+
+  // ---------- canvas / interaction ----------
+  setupCanvas() {
+    const c = this.canvas;
+    this.ctx = c.getContext('2d');
+    c.addEventListener('pointerdown', this.onDown);
+    c.addEventListener('pointermove', this.onMove);
+    c.addEventListener('pointerup', this.onUp);
+    c.addEventListener('pointercancel', this.onUp);
+    c.addEventListener('wheel', this.onWheel, { passive:false });
+  }
+  onResize = () => {
+    const c = this.canvas; if (!c) return;
+    const rect = c.getBoundingClientRect();
+    this.W = rect.width; this.H = rect.height;
+    this.dpr = window.devicePixelRatio || 1;
+    c.width = Math.round(this.W * this.dpr); c.height = Math.round(this.H * this.dpr);
+    this.ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0);
+    this.cx = this.W / 2; this.cy = this.H / 2;
+    this.R = Math.min(this.W, this.H) * 0.46;
+    const narrow = this.W < 720;
+    if (narrow !== this.state.narrow) this.setState({ narrow });
+    this.requestDraw();
+  };
+  onDown = (e) => {
+    this.canvas.setPointerCapture(e.pointerId);
+    this.pointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
+    this._moved = false; this._downPos = { x:e.clientX, y:e.clientY };
+    if (this.pointers.size === 2) this._pinch = this.pinchInfo();
+    this.canvas.style.cursor = 'grabbing';
+  };
+  onMove = (e) => {
+    if (!this.pointers.has(e.pointerId)) return;
+    const prev = this.pointers.get(e.pointerId);
+    this.pointers.set(e.pointerId, { x:e.clientX, y:e.clientY });
+    if (this.pointers.size === 1) {
+      this.panX += e.clientX - prev.x; this.panY += e.clientY - prev.y;
+      if (Math.hypot(e.clientX - this._downPos.x, e.clientY - this._downPos.y) > 6) this._moved = true;
+      this.requestDraw();
+    } else if (this.pointers.size === 2 && this._pinch) {
+      const info = this.pinchInfo();
+      this.zoomAt(info.cx, info.cy, info.dist / this._pinch.dist);
+      this._pinch = info; this._moved = true;
+    }
+  };
+  onUp = (e) => {
+    this.pointers.delete(e.pointerId);
+    if (this.pointers.size < 2) this._pinch = null;
+    this.canvas.style.cursor = 'grab';
+    if (!this._moved && this.pointers.size === 0) {
+      const rect = this.canvas.getBoundingClientRect();
+      this.pick(e.clientX - rect.left, e.clientY - rect.top);
+    }
+  };
+  onWheel = (e) => {
+    e.preventDefault();
+    const rect = this.canvas.getBoundingClientRect();
+    this.zoomAt(e.clientX - rect.left, e.clientY - rect.top, Math.exp(-e.deltaY * 0.0015));
+  };
+  pinchInfo() {
+    const p = [...this.pointers.values()];
+    const rect = this.canvas.getBoundingClientRect();
+    return { dist: Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y),
+      cx: (p[0].x + p[1].x) / 2 - rect.left, cy: (p[0].y + p[1].y) / 2 - rect.top };
+  }
+  zoomAt(mx, my, k) {
+    const ns = Math.max(0.6, Math.min(7, this.scale * k));
+    const r = ns / this.scale;
+    this.panX = (mx - this.cx) * (1 - r) + this.panX * r;
+    this.panY = (my - this.cy) * (1 - r) + this.panY * r;
+    this.scale = ns; this.requestDraw();
+  }
+  pick(x, y) {
+    let best = null, bd = 1e9;
+    for (const s of (this.screenObjs || [])) {
+      const d = Math.hypot(s.x - x, s.y - y);
+      const th = (s.kind === 'star' ? 13 : 19) + (this.state.red ? 6 : 0);
+      if (d < th && d < bd) { bd = d; best = s; }
+    }
+    // Measure mode: taps pick the two endpoints instead of selecting.
+    if (this.state.measure) {
+      if (!best) return;
+      this.setState(s => {
+        if (!s.measureA || (s.measureA && s.measureB)) return { measureA: best.id, measureB: null };
+        if (best.id === s.measureA) return {};
+        return { measureB: best.id };
+      }, this.rd);
+      return;
+    }
+    this.setState({ selected: best ? { id: best.id } : null });
+  }
+  requestDraw() {
+    if (this._pending) return;
+    this._pending = true;
+    setTimeout(() => { this._pending = false; this.draw(); }, 16);
+  }
+
+  // ---------- color helpers ----------
+  hex(h){h=h.replace('#','');return [parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
+  blend(a,b,t){const A=this.hex(a),B=this.hex(b);return `rgb(${A.map((v,i)=>Math.round(v+(B[i]-v)*t)).join(',')})`;}
+  alpha(c,a){const A=this.hex(c);return `rgba(${A[0]},${A[1]},${A[2]},${a})`;}
+  smooth(t){t=Math.max(0,Math.min(1,t));return t*t*(3-2*t);}
+  compass(az){return ['N','NNE','NE','ENE','E','ESE','SE','SSE','S','SSW','SW','WSW','W','WNW','NW','NNW'][Math.round(az/22.5)%16];}
+
+  palette() {
+    return this.state.red ? {
+      ground:'#040000', skyInner:'#0a0000', skyOuter:'#1a0303', daySkyInner:'#160202', daySkyOuter:'#260606',
+      star:'#ff5a3c', line:'rgba(255,70,45,0.42)', con:'rgba(255,90,60,0.6)', grid:'rgba(255,70,45,0.12)',
+      horizon:'rgba(255,90,60,0.55)', label:'rgba(255,120,85,0.92)', dso:'#ff7a4a', moonLit:'#ff7a45', moonDark:'#2a0606', sun:'#ff7a30'
+    } : {
+      ground:'#03060e', skyInner:'#070b18', skyOuter:'#0e1a33', daySkyInner:'#3f6aa6', daySkyOuter:'#7ba6da',
+      star:'#ffffff', line:'rgba(130,160,215,0.5)', con:'rgba(155,180,228,0.62)', grid:'rgba(130,160,215,0.14)',
+      horizon:'rgba(165,190,232,0.6)', label:'rgba(205,218,242,0.94)', dso:'#5fd2bf', moonLit:'#e9eef7', moonDark:'#222a3a', sun:'#ffd24a'
+    };
+  }
+
+  buildFrame(date) {
+    const A = this.astro, lon = this.state.lon, lat = this.state.lat;
+    const lst = A.localSiderealTime(date, lon);
+    const sun = A.getSun(date), moon = A.getMoon(date), planets = A.getPlanets(date);
+    const sunAlt = A.eqToHorizon(sun.ra, sun.dec, lat, lst).alt;
+    return { date, lst, sun, moon, planets, sunAlt };
+  }
+  pt(alt, az) {
+    const rN = (90 - alt) / 90 * this.R * this.scale;
+    const a = az * Math.PI / 180;
+    return [this.cx + this.panX - Math.sin(a) * rN, this.cy + this.panY - Math.cos(a) * rN];
+  }
+
+  draw() {
+    const ctx = this.ctx, A = this.astro;
+    if (!ctx || !A) return;
+    const W = this.W, H = this.H, pal = this.palette();
+    const f = this.buildFrame(this.getDate());
+    this._frame = f;
+    const lat = this.state.lat, lst = f.lst;
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = pal.ground; ctx.fillRect(0, 0, W, H);
+
+    const dcx = this.cx + this.panX, dcy = this.cy + this.panY, Rs = this.R * this.scale;
+    const dayT = this.smooth((f.sunAlt + 12) / 12);
+    const g = ctx.createRadialGradient(dcx, dcy, 0, dcx, dcy, Rs);
+    g.addColorStop(0, this.blend(pal.skyInner, pal.daySkyInner, dayT));
+    g.addColorStop(1, this.blend(pal.skyOuter, pal.daySkyOuter, dayT));
+    ctx.save();
+    ctx.beginPath(); ctx.arc(dcx, dcy, Rs, 0, 2 * Math.PI); ctx.fillStyle = g; ctx.fill(); ctx.clip();
+
+    const tonight = this.state.tonight;
+    const starA = Math.max(0.06, 1 - dayT * 0.92) * (tonight ? 0.5 : 1);
+    const sizeK = Math.min(this.scale, 2.2);
+    this.screenObjs = [];
+
+    // star positions
+    const sp = {};
+    for (const s of this.data.STARS) sp[s.id] = A.eqToHorizon(s.ra, s.dec, lat, lst);
+
+    // grid
+    if (this.state.grid) {
+      ctx.strokeStyle = pal.grid; ctx.lineWidth = 1;
+      [30, 60].forEach(al => { ctx.beginPath(); ctx.arc(dcx, dcy, (90 - al) / 90 * Rs, 0, 2 * Math.PI); ctx.stroke(); });
+      for (let a = 0; a < 360; a += 30) {
+        const rad = a * Math.PI / 180;
+        ctx.beginPath(); ctx.moveTo(dcx, dcy);
+        ctx.lineTo(dcx - Math.sin(rad) * Rs, dcy - Math.cos(rad) * Rs); ctx.stroke();
+      }
+    }
+
+    // constellation lines + names
+    if (this.state.con) {
+      ctx.strokeStyle = pal.line; ctx.lineWidth = Math.max(0.7, 1 * Math.min(this.scale, 2));
+      ctx.globalAlpha = starA * (tonight ? 0.6 : 1);
+      for (const key in this.data.CONSTELLATIONS) {
+        for (const [a, b] of this.data.CONSTELLATIONS[key].lines) {
+          const pa = sp[a], pb = sp[b];
+          if (!pa || !pb || pa.alt < 0 || pb.alt < 0) continue;
+          const A1 = this.pt(pa.alt, pa.az), B1 = this.pt(pb.alt, pb.az);
+          ctx.beginPath(); ctx.moveTo(A1[0], A1[1]); ctx.lineTo(B1[0], B1[1]); ctx.stroke();
+        }
+      }
+      ctx.globalAlpha = 1;
+      ctx.fillStyle = pal.con; ctx.font = '11px Helvetica, Arial, sans-serif';
+      ctx.textAlign = 'center';
+      for (const key in this.data.CONSTELLATIONS) {
+        const stars = this.data.STARS.filter(s => s.con === key && sp[s.id].alt > 3);
+        if (stars.length < 2) continue;
+        let mx = 0, my = 0, n = 0;
+        for (const s of stars) { const p = this.pt(sp[s.id].alt, sp[s.id].az); mx += p[0]; my += p[1]; n++; }
+        ctx.globalAlpha = starA * 0.6;
+        ctx.fillText(this.data.CONSTELLATIONS[key].name, mx / n, my / n);
+      }
+      ctx.globalAlpha = 1; ctx.textAlign = 'left';
+    }
+
+    // stars
+    const lim = this.state.labels ? (2.0 + (this.scale - 1) * 1.3) : -99;
+    ctx.font = '11px Helvetica, Arial, sans-serif';
+    for (const s of this.data.STARS) {
+      const aa = sp[s.id]; if (aa.alt < 0) continue;
+      const p = this.pt(aa.alt, aa.az);
+      const r = Math.max(0.7, (4.6 - s.mag) * 0.62) * sizeK * 0.85;
+      if (s.mag < 1.6) {
+        const gg = ctx.createRadialGradient(p[0], p[1], 0, p[0], p[1], r * 3.6);
+        gg.addColorStop(0, this.alpha(pal.star, 0.55)); gg.addColorStop(1, this.alpha(pal.star, 0));
+        ctx.globalAlpha = starA; ctx.fillStyle = gg;
+        ctx.beginPath(); ctx.arc(p[0], p[1], r * 3.6, 0, 2 * Math.PI); ctx.fill();
+      }
+      ctx.globalAlpha = starA; ctx.fillStyle = pal.star;
+      ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, 2 * Math.PI); ctx.fill();
+      this.screenObjs.push({ x:p[0], y:p[1], id:s.id, kind:'star' });
+      if (s.n && s.mag <= lim) {
+        ctx.globalAlpha = Math.min(1, starA + 0.15); ctx.fillStyle = pal.label;
+        ctx.fillText(s.n, p[0] + r + 3, p[1] + 3);
+      }
+    }
+    ctx.globalAlpha = 1;
+
+    // DSOs (full Messier catalog — labels declutter when zoomed out)
+    if (this.state.dso) {
+      ctx.font = '10.5px Helvetica, Arial, sans-serif';
+      const selId = this.state.selected && this.state.selected.id;
+      const acc = this.state.red ? '#ff5a3c' : (this.props.accent || '#e7b35a');
+      for (const d of this.data.DSO) {
+        const aa = A.eqToHorizon(d.ra, d.dec, lat, lst); if (aa.alt < 0) continue;
+        const p = this.pt(aa.alt, aa.az);
+        this.drawDso(ctx, p[0], p[1], d.type, pal, sizeK);
+        this.screenObjs.push({ x:p[0], y:p[1], id:d.id, kind:'dso' });
+        if (tonight && aa.alt > 8) this.pulseRing(ctx, p[0], p[1], 11 * sizeK);
+        // With 110 Messiers a full label pass would swamp the map: label only when
+        // zoomed in, or the object is selected / a Tonight highlight.
+        const labelled = this.state.labels &&
+          (this.scale > 1.6 || d.id === selId || (tonight && aa.alt > 8));
+        if (labelled) { ctx.fillStyle = pal.dso; ctx.fillText(d.n, p[0] + 8, p[1] + 3.5); }
+        // Observation-log tick
+        if (this._observed && this._observed[d.id]) {
+          ctx.fillStyle = acc;
+          ctx.beginPath(); ctx.arc(p[0] + 5.5 * sizeK, p[1] - 5.5 * sizeK, 1.8, 0, 2 * Math.PI); ctx.fill();
+        }
+      }
+    }
+
+    // Active meteor-shower radiants
+    const showers = (this.data.SHOWERS || []).filter(sh => this.showerActive(sh, f.date));
+    ctx.font = '10.5px Helvetica, Arial, sans-serif';
+    for (const sh of showers) {
+      const aa = A.eqToHorizon(sh.ra, sh.dec, lat, lst); if (aa.alt < 0) continue;
+      const p = this.pt(aa.alt, aa.az);
+      const acc = this.state.red ? '#ff5a3c' : (this.props.accent || '#e7b35a');
+      ctx.strokeStyle = this.alpha(acc, 0.9); ctx.lineWidth = 1.2;
+      for (let k = 0; k < 8; k++) { // radiant starburst: 8 short outward strokes
+        const a = k * Math.PI / 4;
+        ctx.beginPath();
+        ctx.moveTo(p[0] + Math.cos(a) * 3.5, p[1] + Math.sin(a) * 3.5);
+        ctx.lineTo(p[0] + Math.cos(a) * 9, p[1] + Math.sin(a) * 9);
+        ctx.stroke();
+      }
+      this.screenObjs.push({ x:p[0], y:p[1], id:sh.id, kind:'shower' });
+      ctx.fillStyle = this.alpha(acc, 0.95);
+      ctx.fillText(`${sh.n} ✦`, p[0] + 12, p[1] + 3.5);
+    }
+
+    // sun / moon / planets
+    const drawBody = (o, kind) => {
+      const aa = A.eqToHorizon(o.ra, o.dec, lat, lst); if (aa.alt < 0) return;
+      const p = this.pt(aa.alt, aa.az);
+      this.screenObjs.push({ x:p[0], y:p[1], id:o.id, kind });
+      if (tonight && aa.alt > 5) this.pulseRing(ctx, p[0], p[1], 14 * sizeK);
+      ctx.font = '12px Helvetica, Arial, sans-serif';
+      if (kind === 'sun') {
+        this.glowDisk(ctx, p[0], p[1], 7 * sizeK, pal.sun);
+      } else if (kind === 'moon') {
+        this.drawMoon(ctx, p[0], p[1], Math.max(7, 8 * sizeK), o.illum, o.waxing, pal);
+      } else {
+        const col = o.col || '#ddd';
+        if (o.id === 'Venus' || o.id === 'Jupiter') this.glowDisk(ctx, p[0], p[1], 4.2 * sizeK, col);
+        else { ctx.fillStyle = col; ctx.beginPath(); ctx.arc(p[0], p[1], 3.4 * sizeK, 0, 2 * Math.PI); ctx.fill(); }
+      }
+      ctx.fillStyle = pal.label;
+      ctx.fillText(o.n, p[0] + 9 * sizeK, p[1] + 4);
+    };
+    if (f.sunAlt > -1) drawBody(f.sun, 'sun');
+    drawBody(f.moon, 'moon');
+    for (const pl of f.planets) drawBody(pl, 'planet');
+
+    ctx.restore(); // unclip
+
+    // horizon ring + cardinals
+    ctx.strokeStyle = pal.horizon; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.arc(dcx, dcy, Rs, 0, 2 * Math.PI); ctx.stroke();
+    ctx.fillStyle = pal.horizon; ctx.font = 'bold 13px Helvetica, Arial, sans-serif';
+    ctx.textAlign = 'center';
+    [['N',0],['E',90],['S',180],['W',270]].forEach(([lab, az]) => {
+      const a = az * Math.PI / 180;
+      const x = dcx - Math.sin(a) * (Rs - 14), y = dcy - Math.cos(a) * (Rs - 14);
+      ctx.fillText(lab, x, y + 4);
+    });
+    ctx.textAlign = 'left';
+
+    // selected highlight
+    const sel = this.state.selected;
+    if (sel) {
+      const so = this.screenObjs.find(o => o.id === sel.id);
+      if (so) {
+        const acc = this.props.accent && !this.state.red ? this.props.accent : (this.state.red ? '#ff5a3c' : '#e7b35a');
+        ctx.strokeStyle = acc; ctx.lineWidth = 1.6;
+        ctx.beginPath(); ctx.arc(so.x, so.y, 15, 0, 2 * Math.PI); ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(so.x - 22, so.y); ctx.lineTo(so.x - 17, so.y);
+        ctx.moveTo(so.x + 17, so.y); ctx.lineTo(so.x + 22, so.y);
+        ctx.moveTo(so.x, so.y - 22); ctx.lineTo(so.x, so.y - 17);
+        ctx.moveTo(so.x, so.y + 17); ctx.lineTo(so.x, so.y + 22);
+        ctx.stroke();
+
+        // Telrad + eyepiece true-FOV rings at the selected object.
+        // Azimuthal-equidistant projection → 1° of sky = R*scale/90 px radially,
+        // so small circles of angular diameter D map to radius D/2 * pxPerDeg.
+        const cfg = this.state.scopeCfg;
+        const pxPerDeg = (this.R * this.scale) / 90;
+        ctx.font = '10px ui-monospace, monospace';
+        if (cfg && cfg.telrad) {
+          ctx.strokeStyle = this.alpha(acc, 0.75); ctx.lineWidth = 1.1;
+          [0.5, 2, 4].forEach(dDeg => {
+            ctx.beginPath(); ctx.arc(so.x, so.y, (dDeg / 2) * pxPerDeg, 0, 2 * Math.PI); ctx.stroke();
+          });
+        }
+        if (cfg && isFinite(cfg.fl) && cfg.fl > 0) {
+          ctx.setLineDash([4, 4]);
+          for (const ep of (cfg.eps || [])) {
+            if (!isFinite(ep.fl) || !isFinite(ep.afov) || ep.fl <= 0) continue;
+            const tf = ep.afov / (cfg.fl / ep.fl); // true field, degrees
+            const rr = (tf / 2) * pxPerDeg;
+            ctx.strokeStyle = this.alpha(acc, 0.5); ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.arc(so.x, so.y, rr, 0, 2 * Math.PI); ctx.stroke();
+            ctx.fillStyle = this.alpha(acc, 0.85);
+            ctx.fillText(`${ep.fl}mm · ${tf.toFixed(2)}°`, so.x + rr * 0.72, so.y - rr * 0.72);
+          }
+          ctx.setLineDash([]);
+        }
+      }
+    }
+
+    // Measure tool: line + separation label between the two tapped objects.
+    if (this.state.measure) {
+      const acc2 = this.state.red ? '#ff5a3c' : (this.props.accent || '#e7b35a');
+      const oA = this.state.measureA && this.screenObjs.find(o => o.id === this.state.measureA);
+      const oB = this.state.measureB && this.screenObjs.find(o => o.id === this.state.measureB);
+      if (oA) {
+        ctx.strokeStyle = acc2; ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.arc(oA.x, oA.y, 10, 0, 2 * Math.PI); ctx.stroke();
+      }
+      if (oA && oB) {
+        ctx.beginPath(); ctx.arc(oB.x, oB.y, 10, 0, 2 * Math.PI); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(oA.x, oA.y); ctx.lineTo(oB.x, oB.y); ctx.stroke();
+        const eqA = this.lookupEq(this.state.measureA), eqB = this.lookupEq(this.state.measureB);
+        if (eqA && eqB) {
+          const sep = A.angularSep(eqA.ra, eqA.dec, eqB.ra, eqB.dec);
+          ctx.font = 'bold 12px ui-monospace, monospace';
+          ctx.fillStyle = acc2; ctx.textAlign = 'center';
+          ctx.fillText(`${sep.toFixed(1)}°`, (oA.x + oB.x) / 2, (oA.y + oB.y) / 2 - 8);
+          ctx.textAlign = 'left';
+        }
+      }
+    }
+  }
+
+  // Equatorial position of any drawable object by id (for the Measure tool).
+  lookupEq(id) {
+    const s = this.data.STARS.find(o => o.id === id); if (s) return s;
+    const d = this.data.DSO.find(o => o.id === id); if (d) return d;
+    const sh = (this.data.SHOWERS || []).find(o => o.id === id); if (sh) return sh;
+    const f = this._frame;
+    if (f) {
+      if (id === 'sun') return f.sun;
+      if (id === 'moon') return f.moon;
+      const p = f.planets.find(o => o.id === id); if (p) return p;
+    }
+    return null;
+  }
+
+  // Is a meteor shower active on this date? Windows may wrap the new year.
+  showerActive(sh, date) {
+    const md = (date.getMonth() + 1) * 100 + date.getDate();
+    const a = sh.from[0] * 100 + sh.from[1], b = sh.to[0] * 100 + sh.to[1];
+    return a <= b ? (md >= a && md <= b) : (md >= a || md <= b);
+  }
+
+  glowDisk(ctx, x, y, r, col) {
+    const gg = ctx.createRadialGradient(x, y, 0, x, y, r * 3);
+    gg.addColorStop(0, col); gg.addColorStop(0.4, this.alpha(col, 0.5)); gg.addColorStop(1, this.alpha(col, 0));
+    ctx.fillStyle = gg; ctx.beginPath(); ctx.arc(x, y, r * 3, 0, 2 * Math.PI); ctx.fill();
+    ctx.fillStyle = col; ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.fill();
+  }
+  pulseRing(ctx, x, y, r) {
+    const a = 0.35 + 0.35 * Math.sin(Date.now() / 480);
+    const acc = this.state.red ? '#ff5a3c' : (this.props.accent || '#e7b35a');
+    ctx.strokeStyle = this.alpha(acc, a); ctx.lineWidth = 1.6;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.stroke();
+    this.requestDraw();
+  }
+  drawDso(ctx, x, y, type, pal, k) {
+    ctx.strokeStyle = pal.dso; ctx.fillStyle = pal.dso; ctx.lineWidth = 1.3;
+    const r = 4 * k;
+    if (type === 'galaxy') {
+      ctx.save(); ctx.translate(x, y); ctx.rotate(-0.5); ctx.beginPath();
+      ctx.ellipse(0, 0, r * 1.5, r * 0.7, 0, 0, 2 * Math.PI); ctx.stroke(); ctx.restore();
+    } else if (type === 'globular') {
+      ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, 0.8, 0, 2 * Math.PI); ctx.fill();
+    } else if (type === 'open') {
+      ctx.setLineDash([2, 2]); ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.stroke(); ctx.setLineDash([]);
+    } else if (type === 'planetary') {
+      ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.stroke();
+      ctx.beginPath(); ctx.arc(x, y, r * 0.45, 0, 2 * Math.PI); ctx.stroke();
+    } else { // nebula
+      ctx.strokeRect(x - r, y - r, r * 2, r * 2);
+    }
+  }
+  drawMoon(ctx, x, y, r, illum, waxing, pal) {
+    ctx.save(); ctx.translate(x, y);
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, 2 * Math.PI); ctx.fillStyle = pal.moonDark; ctx.fill();
+    const i = Math.max(0.001, Math.min(0.999, illum));
+    const dir = waxing ? 1 : -1;
+    ctx.beginPath(); ctx.fillStyle = pal.moonLit;
+    ctx.arc(0, 0, r, -Math.PI / 2, Math.PI / 2, dir < 0);
+    const cosA = 2 * i - 1;
+    ctx.ellipse(0, 0, r * Math.abs(cosA), r, 0, Math.PI / 2, -Math.PI / 2, cosA > 0 ? (dir > 0) : (dir < 0));
+    ctx.fill();
+    ctx.restore();
+    ctx.beginPath(); ctx.arc(x, y, r, 0, 2 * Math.PI); ctx.strokeStyle = pal.horizon; ctx.lineWidth = 0.8; ctx.stroke();
+  }
+
+  // ---------- handlers ----------
+  rd = () => this.requestDraw();
+  toggleRed = () => this.setState(s => ({ red: !s.red }), () => { this.applyTheme(); this.rd(); });
+  toggleTonight = () => this.setState(s => ({ tonight: !s.tonight }), this.rd);
+  toggleCon = () => this.setState(s => ({ con: !s.con }), this.rd);
+  toggleLabels = () => this.setState(s => ({ labels: !s.labels }), this.rd);
+  toggleDso = () => this.setState(s => ({ dso: !s.dso }), this.rd);
+  toggleGrid = () => this.setState(s => ({ grid: !s.grid }), this.rd);
+  openLoc = () => this.setState({ locOpen: true });
+  closeLoc = () => this.setState({ locOpen: false });
+  openSearch = () => this.setState({ searchOpen: true, query: '' });
+  closeSearch = () => this.setState({ searchOpen: false });
+  onQuery = (e) => this.setState({ query: e.target.value });
+  clearSelected = () => this.setState({ selected: null }, this.rd);
+  resetTime = () => this.setState({ offsetH: 0 }, this.rd);
+  onTimeInput = (e) => this.setState({ offsetH: parseFloat(e.target.value) }, this.rd);
+  onManualLat = (e) => this.setState({ manualLat: e.target.value });
+  onManualLon = (e) => this.setState({ manualLon: e.target.value });
+  pickLoc = (l) => this.setState({ lat: l.lat, lon: l.lon, locName: l.name, locOpen: false }, this.rd);
+  applyManual = () => {
+    const la = parseFloat(this.state.manualLat), lo = parseFloat(this.state.manualLon);
+    if (isFinite(la) && isFinite(lo) && Math.abs(la) <= 90 && Math.abs(lo) <= 180)
+      this.setState({ lat: la, lon: lo, locName: `${la.toFixed(2)}°, ${lo.toFixed(2)}°`, locOpen: false }, this.rd);
+  };
+  useMyLoc = () => {
+    if (!navigator.geolocation) return;
+    navigator.geolocation.getCurrentPosition(pos =>
+      this.setState({ lat: pos.coords.latitude, lon: pos.coords.longitude, locName: 'My location', locOpen: false }, this.rd));
+  };
+  select = (id, center) => {
+    if (center && this._byId) {
+      const o = this._byId[id];
+      if (o && o.alt > 0) {
+        const rN = (90 - o.alt) / 90 * this.R * this.scale;
+        const a = o.az * Math.PI / 180;
+        this.panX = Math.sin(a) * rN; this.panY = Math.cos(a) * rN;
+      }
+    }
+    this.setState({ selected: { id }, searchOpen: false }, this.rd);
+  };
+
+  // ---------- telescope toolkit / field usability ----------
+  setScope = (mut) => this.setState(s => {
+    const cfg = JSON.parse(JSON.stringify(s.scopeCfg));
+    mut(cfg);
+    try { localStorage.setItem('sk-scope', JSON.stringify(cfg)); } catch (e) {}
+    return { scopeCfg: cfg };
+  }, this.rd);
+  openScope = () => this.setState({ scopeOpen: true });
+  closeScope = () => this.setState({ scopeOpen: false });
+  onScopeFl = (e) => { const v = e.target.value; this.setScope(c => { c.fl = v; }); };
+  addEyepiece = () => this.setScope(c => { c.eps.push({ fl: 6, afov: 52 }); });
+  toggleTelrad = () => this.setScope(c => { c.telrad = !c.telrad; });
+
+  toggleMeasure = () => this.setState(s => ({ measure: !s.measure, measureA: null, measureB: null }), this.rd);
+  toggleLog = () => this.setState(s => ({ logOpen: !s.logOpen }));
+
+  toggleObserved = () => {
+    const id = this.state.selected && this.state.selected.id;
+    if (!id) return;
+    if (!this._observed) this._observed = {};
+    if (this._observed[id]) delete this._observed[id];
+    else this._observed[id] = new Date().toISOString().slice(0, 10);
+    try { localStorage.setItem('sk-log', JSON.stringify(this._observed)); } catch (e) {}
+    this.setState(s => ({ obsN: s.obsN + 1 }), this.rd);
+  };
+  unlog = (id) => {
+    if (!this._observed) return;
+    delete this._observed[id];
+    try { localStorage.setItem('sk-log', JSON.stringify(this._observed)); } catch (e) {}
+    this.setState(s => ({ obsN: s.obsN + 1 }), this.rd);
+  };
+
+  _acquireWake = async () => {
+    this._wakeLock = await navigator.wakeLock.request('screen');
+    this._wakeLock.addEventListener('release', () => {
+      this._wakeLock = null;
+      // Auto-releases (tab hidden etc.); onVisibility re-acquires if still wanted.
+    });
+  };
+  toggleAwake = async () => {
+    if (this.state.awake) {
+      try { if (this._wakeLock) await this._wakeLock.release(); } catch (e) {}
+      this._wakeLock = null;
+      this.setState({ awake: false });
+    } else {
+      try { await this._acquireWake(); this.setState({ awake: true }); }
+      catch (e) { this.setState({ awake: false }); }
+    }
+  };
+  onVisibility = async () => {
+    if (this.state.awake && document.visibilityState === 'visible' && !this._wakeLock) {
+      try { await this._acquireWake(); } catch (e) { this.setState({ awake: false }); }
+    }
+  };
+
+  toggleFullscreen = () => {
+    if (document.fullscreenElement) { document.exitFullscreen().catch(() => {}); }
+    else if (this.rootEl && this.rootEl.requestFullscreen) { this.rootEl.requestFullscreen().catch(() => {}); }
+  };
+  onFsChange = () => this.setState({ fs: !!document.fullscreenElement });
+
+  // Format a [month, day] pair like "Aug 12".
+  mdLabel(md) {
+    const M = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${M[md[0] - 1]} ${md[1]}`;
+  }
+
+  typeLabel(o) {
+    if (o.kind === 'star') { const c = this.data.CONSTELLATIONS[o.con]; return 'Star' + (c ? ' · ' + c.name : ''); }
+    if (o.kind === 'planet') return 'Planet';
+    if (o.kind === 'moon') return 'The Moon';
+    if (o.kind === 'sun') return 'The Sun';
+    if (o.kind === 'shower') return 'Meteor shower radiant';
+    return ({ galaxy:'Galaxy', nebula:'Nebula', planetary:'Planetary nebula', globular:'Globular cluster', open:'Open cluster' })[o.type] || 'Deep-sky object';
+  }
+
+  renderVals() {
+    const S = this.state;
+    const loaded = !!this.astro;
+    const frame = loaded ? this.buildFrame(this.getDate()) : null;
+    this._frame = frame;
+    const d = this.getDate();
+    const clockText = d.toLocaleTimeString('en-GB');
+    const dateText = d.toLocaleDateString('en-GB', { weekday:'short', day:'2-digit', month:'short', year:'numeric' });
+    let timeLabel = 'Live · now';
+    if (S.offsetH !== 0) {
+      const m = Math.round(Math.abs(S.offsetH) * 60), hh = Math.floor(m / 60), mm = m % 60;
+      timeLabel = (S.offsetH > 0 ? '+' : '−') + hh + 'h' + (mm ? ' ' + mm + 'm' : '');
+    }
+
+    let sunStatus = '', byId = {}, all = [], tonightList = [], results = [], selectedCard = null;
+    if (frame) {
+      const sa = frame.sunAlt;
+      sunStatus = sa > 0 ? 'Daytime — sky too bright' : sa > -6 ? 'Civil twilight — too bright yet'
+        : sa > -12 ? 'Nautical twilight — getting dark' : sa > -18 ? 'Astronomical twilight — nearly dark'
+        : 'Full darkness — prime viewing';
+
+      const lat = S.lat, lst = frame.lst;
+      const aa = (o) => this.astro.eqToHorizon(o.ra, o.dec, lat, lst);
+      this.data.STARS.forEach(s => all.push({ ...s, kind:'star' }));
+      this.data.DSO.forEach(o => all.push({ ...o, kind:'dso' }));
+      all.push({ ...frame.sun, kind:'sun' });
+      all.push({ ...frame.moon, kind:'moon' });
+      frame.planets.forEach(p => all.push({ ...p, kind:'planet' }));
+      (this.data.SHOWERS || []).filter(sh => this.showerActive(sh, d))
+        .forEach(sh => all.push({ ...sh, kind:'shower' }));
+      all.forEach(o => { const h = aa(o); o.alt = h.alt; o.az = h.az; });
+      all.forEach(o => { byId[o.id] = o; });
+      this._byId = byId;
+
+      // tonight highlights
+      const cand = all.filter(o =>
+        (o.kind === 'planet' && o.alt > 5) ||
+        (o.kind === 'moon' && o.alt > 2) ||
+        (o.kind === 'shower' && o.alt > 0) ||
+        (o.kind === 'dso' && o.alt > 8));
+      cand.sort((a, b) => b.alt - a.alt);
+      tonightList = cand.slice(0, 10).map(o => ({
+        id: o.id, name: o.n,
+        meta: `${Math.round(o.alt)}° ${this.compass(o.az)}`,
+        onClick: () => this.select(o.id, true)
+      }));
+
+      // search results
+      const q = S.query.trim().toLowerCase();
+      const pool = all.filter(o => o.n);
+      let matched = q ? pool.filter(o => o.n.toLowerCase().includes(q))
+        : ['M42','M31','Jupiter','Saturn','Mars','Venus','moon','vega','M13','M45'].map(id => byId[id]).filter(Boolean);
+      matched = matched.slice(0, 10);
+      results = matched.map(o => ({
+        id: o.id, name: o.n,
+        meta: o.alt > 0 ? `${this.typeLabelShort(o)} · ${Math.round(o.alt)}° up` : `${this.typeLabelShort(o)} · below`,
+        onClick: () => this.select(o.id, true)
+      }));
+
+      // selected card
+      if (S.selected && byId[S.selected.id]) {
+        const o = byId[S.selected.id];
+        const up = o.alt > 0;
+
+        // Rise / transit / set + best dark-sky window. Cached — the scan is ~150
+        // samples, so only recompute when target / time / place actually changes.
+        let times = '', bestTxt = '';
+        if (o.kind !== 'sun') {
+          const key = `${o.id}|${S.offsetH}|${S.lat.toFixed(2)}|${S.lon.toFixed(2)}|${d.toDateString()}`;
+          if (!this._rts || this._rts.key !== key) {
+            const rts = this.astro.riseTransitSet(o, d, S.lat, S.lon);
+            const bw = this.astro.bestWindow(o, d, S.lat, S.lon);
+            const hm = (dt) => dt.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            let t;
+            if (rts.circumpolar) t = `Circumpolar — up all night · highest ${hm(rts.transit)} (${Math.round(rts.transitAlt)}°)`;
+            else if (rts.neverUp) t = 'Never rises from this latitude';
+            else {
+              const parts = [];
+              if (rts.rise) parts.push(`Rises ${hm(rts.rise)} ${this.compass(rts.riseAz)}`);
+              parts.push(`peaks ${hm(rts.transit)} (${Math.round(rts.transitAlt)}°)`);
+              if (rts.set) parts.push(`sets ${hm(rts.set)} ${this.compass(rts.setAz)}`);
+              t = parts.join(' · ');
+            }
+            this._rts = { key, times: t, best: bw ? `Best tonight ≈ ${hm(bw.time)} at ${Math.round(bw.alt)}°` : '' };
+          }
+          times = this._rts.times; bestTxt = this._rts.best;
+        }
+
+        // Bright-Moon interference warning for deep-sky targets.
+        let moonWarn = '';
+        if (o.kind === 'dso' && frame.moon.illum > 0.45) {
+          const m = byId.moon;
+          if (m && m.alt > 0) {
+            const sep = this.astro.angularSep(frame.moon.ra, frame.moon.dec, o.ra, o.dec);
+            if (sep < 35) moonWarn = `⚠ ${Math.round(frame.moon.illum * 100)}%-lit Moon only ${Math.round(sep)}° away — faint detail will be washed out.`;
+          }
+        }
+
+        const isShower = o.kind === 'shower';
+        selectedCard = {
+          name: o.n || 'Star',
+          typeLabel: this.typeLabel(o) + (o.kind === 'moon' && o.phaseName ? ' · ' + o.phaseName : ''),
+          locateText: up ? `Look ${this.compass(o.az)} · ${Math.round(o.alt)}° above the horizon` : 'Below the horizon right now',
+          detail: isShower
+            ? `ZHR ~${o.zhr} at peak (${this.mdLabel(o.peak)}) · active ${this.mdLabel(o.from)} – ${this.mdLabel(o.to)}`
+            : `Mag ${o.mag}` + (o.kind === 'moon' ? ` · ${Math.round(o.illum * 100)}% lit` : ''),
+          times, best: bestTxt, moonWarn,
+          note: o.note || (isShower ? 'Meteors can appear anywhere in the sky — their trails trace back to this radiant. Rates are best after midnight.' : ''),
+          canLog: o.kind === 'dso' || o.kind === 'planet'
+        };
+      }
+    }
+
+    // chip styles
+    const base = { padding:'9px 14px', borderRadius:'999px', fontSize:'13px', fontWeight:600, whiteSpace:'nowrap',
+      backdropFilter:'blur(9px)', WebkitBackdropFilter:'blur(9px)', transition:'all .15s', flexShrink:0 };
+    const chip = (on) => on
+      ? { ...base, background:'var(--sk-accent,#e7b35a)', color:'var(--sk-accent-fg,#150f04)', border:'1px solid transparent' }
+      : { ...base, background:'var(--sk-chip,rgba(255,255,255,0.06))', color:'var(--sk-fg,#d4ddf0)', border:'1px solid var(--sk-border,rgba(120,150,210,0.22))' };
+
+    // Left-side vertical menu rows (full-width, left-aligned) — same on/off states as
+    // the pills but styled as a menu that sits below the clock.
+    const menuBase = { padding:'9px 13px', borderRadius:'10px', fontSize:'13px', fontWeight:600,
+      whiteSpace:'nowrap', textAlign:'left', width:'100%',
+      backdropFilter:'blur(9px)', WebkitBackdropFilter:'blur(9px)', transition:'all .15s' };
+    const menuChip = (on) => on
+      ? { ...menuBase, background:'var(--sk-accent,#e7b35a)', color:'var(--sk-accent-fg,#150f04)', border:'1px solid transparent' }
+      : { ...menuBase, background:'var(--sk-panel,rgba(10,14,26,0.82))', color:'var(--sk-fg,#d4ddf0)', border:'1px solid var(--sk-border,rgba(120,150,210,0.22))' };
+
+    const panelBase = { zIndex:7, background:'var(--sk-panel,rgba(10,14,26,0.82))', border:'1px solid var(--sk-border,rgba(120,150,210,0.22))',
+      borderRadius:'16px', padding:'14px 16px', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)',
+      boxShadow:'0 16px 44px rgba(0,0,0,0.4)' };
+    const narrow = S.narrow;
+    const cardStyle = narrow
+      ? { position:'absolute', left:'10px', right:'10px', bottom:'110px', ...panelBase }
+      : { position:'absolute', left:'14px', bottom:'112px', width:'330px', ...panelBase };
+    const tonightPanelStyle = narrow
+      ? { position:'absolute', top:'150px', left:'10px', right:'10px', maxHeight:'34vh', display:'flex', flexDirection:'column', ...panelBase }
+      : { position:'absolute', top:'72px', right:'14px', width:'282px', maxHeight:'58vh', display:'flex', flexDirection:'column', ...panelBase };
+    const logPanelStyle = narrow
+      ? { position:'absolute', top:'150px', left:'10px', right:'10px', maxHeight:'34vh', display:'flex', flexDirection:'column', ...panelBase }
+      : { position:'absolute', top:'150px', left:'182px', width:'300px', maxHeight:'52vh', display:'flex', flexDirection:'column', ...panelBase }; // right of the left menu
+
+    // Eyepiece editor rows (Scope modal): magnification + true field preview per row.
+    const cfg = S.scopeCfg;
+    const epRows = (cfg.eps || []).map((ep, i) => {
+      const flN = parseFloat(cfg.fl), epN = parseFloat(ep.fl), afN = parseFloat(ep.afov);
+      const ok = flN > 0 && epN > 0 && afN > 0;
+      return {
+        fl: String(ep.fl), afov: String(ep.afov),
+        meta: ok ? `${Math.round(flN / epN)}× · ${(afN / (flN / epN)).toFixed(2)}°` : '—',
+        onFl: (e) => { const v = e.target.value; this.setScope(c => { c.eps[i].fl = v; }); },
+        onAfov: (e) => { const v = e.target.value; this.setScope(c => { c.eps[i].afov = v; }); },
+        onRemove: () => this.setScope(c => { c.eps.splice(i, 1); })
+      };
+    });
+
+    // Observation log (localStorage): Messier progress + logged list, newest first.
+    const obs = this._observed || {};
+    const obsIds = Object.keys(obs);
+    const isM = (id) => /^M\d+$/.test(id);
+    const messierTotal = this.data ? this.data.DSO.filter(o => isM(o.id)).length : 110;
+    const messierDone = obsIds.filter(isM).length;
+    const logProgress = `Messier ${messierDone} / ${messierTotal} · ${obsIds.length} logged in total`;
+    const logList = obsIds
+      .sort((a, b) => (obs[b] < obs[a] ? -1 : 1))
+      .map(id => {
+        const o = byId[id] || (this.data && this.data.DSO.find(x => x.id === id));
+        return {
+          id, name: (o && o.n) || id, date: obs[id],
+          onClick: () => this.select(id, true),
+          onRemove: () => this.unlog(id)
+        };
+      });
+    const isObserved = !!(S.selected && obs[S.selected.id]);
+
+    return {
+      setRoot: this.setRoot, setCanvas: this.setCanvas, setSearchInput: this.setSearchInput,
+      locName: S.locName, clockText, dateText, sunStatus, timeLabel, offsetH: S.offsetH,
+      tonight: S.tonight, locOpen: S.locOpen, searchOpen: S.searchOpen, query: S.query,
+      manualLat: S.manualLat, manualLon: S.manualLon,
+      locations: this.locations || [], results, tonightList,
+      tonightEmpty: tonightList.length === 0,
+      tonightEmptyText: frame && frame.sunAlt > -6 ? 'Wait for the sky to darken — targets will appear here as twilight fades.' : 'Nothing notable is above the horizon right now. Try the time slider.',
+      selectedCard,
+      conChip: menuChip(S.con), labelChip: menuChip(S.labels), dsoChip: menuChip(S.dso), gridChip: menuChip(S.grid),
+      tonightChip: menuChip(S.tonight), redChip: chip(S.red), findChip: chip(false),
+      cardStyle, tonightPanelStyle,
+      toggleRed: this.toggleRed, toggleTonight: this.toggleTonight, toggleCon: this.toggleCon,
+      toggleLabels: this.toggleLabels, toggleDso: this.toggleDso, toggleGrid: this.toggleGrid,
+      openLoc: this.openLoc, closeLoc: this.closeLoc, openSearch: this.openSearch, closeSearch: this.closeSearch,
+      onQuery: this.onQuery, clearSelected: this.clearSelected, resetTime: this.resetTime,
+      onTimeInput: this.onTimeInput, onManualLat: this.onManualLat, onManualLon: this.onManualLon,
+      applyManual: this.applyManual, useMyLoc: this.useMyLoc,
+      // telescope toolkit + field usability
+      measureChip: menuChip(S.measure), scopeChip: menuChip(S.scopeOpen), logChip: menuChip(S.logOpen),
+      awakeChip: chip(S.awake), fsChip: chip(S.fs),
+      wakeSupported: typeof navigator !== 'undefined' && 'wakeLock' in navigator,
+      toggleMeasure: this.toggleMeasure, openScope: this.openScope, closeScope: this.closeScope,
+      toggleLog: this.toggleLog, toggleAwake: this.toggleAwake, toggleFullscreen: this.toggleFullscreen,
+      scopeOpen: S.scopeOpen, logOpen: S.logOpen,
+      scopeFl: String(cfg.fl), onScopeFl: this.onScopeFl, epRows, addEyepiece: this.addEyepiece,
+      toggleTelrad: this.toggleTelrad,
+      telradBtn: { ...chip(!!cfg.telrad), marginTop: '10px', borderRadius: '9px', textAlign: 'center' },
+      toggleObserved: this.toggleObserved,
+      observedLabel: isObserved ? '✓ Observed — tap to unmark' : 'Mark observed',
+      observedBtn: { ...chip(isObserved), marginTop: '12px', width: '100%', textAlign: 'center', borderRadius: '11px' },
+      logPanelStyle, logProgress, logList, logEmpty: logList.length === 0
+    };
+  }
+
+  typeLabelShort(o) {
+    if (o.kind === 'star') return 'Star';
+    if (o.kind === 'planet') return 'Planet';
+    if (o.kind === 'moon') return 'Moon';
+    if (o.kind === 'sun') return 'Sun';
+    return ({ galaxy:'Galaxy', nebula:'Nebula', planetary:'Plan. neb.', globular:'Globular', open:'Cluster' })[o.type] || 'DSO';
+  }
+}
+</script>
+</body>
+</html>

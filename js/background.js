@@ -10,6 +10,8 @@
  *   unit.background → unit.images[0] → nearest ancestor's image → color gradient
  */
 
+import { unitForMa } from "./utils.js";
+
 export class Background {
   /** @param {Array} units — all period/era/eon units (for ancestor lookup) */
   constructor(units) {
@@ -33,31 +35,53 @@ export class Background {
     document.body.prepend(this.stage);
 
     this.active = 0; // index of the currently-visible frame
+    this.current = null; // last unit applied (so restore() can return to it after showEvent)
   }
 
   /** Apply a unit's background, or clear it when unit is null. */
   apply(unit) {
-    const next = (this.active + 1) % 2;
-    const nextFrame = this.frames[next];
-
+    this.current = unit ?? null;
     if (!unit) {
       // Reset: fade both frames out, back to the default --bg.
       this.frames.forEach((f) => f.classList.remove("active"));
       return;
     }
+    this.#crossfadeTo(this.#bgValue(unit));
+  }
 
-    nextFrame.style.backgroundImage = this.#bgValue(unit);
+  /** Cross-fade to an event's image (tinted by its period). Leaves `current` intact. */
+  showEvent(event) {
+    const img = event?.background ?? event?.image; // prefer a dedicated large bg, else the 1:1
+    if (!img) return; // no image → leave the current background as-is
+    const unit = this.#unitForMa(event.ma);
+    const [r, g, b] = this.#hexToRgb(unit?.color ?? "#666");
+    this.#crossfadeTo(
+      `linear-gradient(0deg, rgba(${r},${g},${b},0.2), rgba(${r},${g},${b},0.2)), url("${img}")`
+    );
+  }
 
-    // Force reflow so the new image is committed before the opacity swap,
-    // guaranteeing a clean cross-fade rather than a flash.
+  /** Revert to the last applied unit (or the default) after showEvent(). */
+  restore() {
+    this.apply(this.current);
+  }
+
+  /* ---- helpers ---- */
+
+  #crossfadeTo(value) {
+    const next = (this.active + 1) % 2;
+    const nextFrame = this.frames[next];
+    nextFrame.style.backgroundImage = value;
+    // Force reflow so the new image is committed before the opacity swap.
     void nextFrame.offsetWidth;
-
     this.frames[this.active].classList.remove("active");
     nextFrame.classList.add("active");
     this.active = next;
   }
 
-  /* ---- helpers ---- */
+  /** Smallest-span unit whose range contains `ma` — used for the event tint colour. */
+  #unitForMa(ma) {
+    return unitForMa(this.byId.values(), ma);
+  }
 
   #bgValue(unit) {
     const image = this.#resolveImage(unit);

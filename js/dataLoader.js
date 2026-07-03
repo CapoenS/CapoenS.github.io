@@ -11,6 +11,7 @@ const DATA_FILES = {
   species: "data/species.json",
   events: "data/events.json",
   sources: "data/sources.json",
+  cosmos: "data/cosmos.json", // optional cosmic prequel (Big Bang → 4.6 Ga); absent = Earth-only
 };
 
 /** Fetch one JSON file, throwing a readable error if it fails. */
@@ -32,28 +33,38 @@ async function fetchOptionalJson(path) {
   }
 }
 
+/** Tag each item with a realm (mutates a shallow copy is overkill — set the field). */
+function tagRealm(items, realm) {
+  for (const it of items) it.realm = it.realm ?? realm;
+  return items;
+}
+
 /** Load everything the app needs. Returns { periods, species, events, sources }. */
 export async function loadData() {
-  const [periodsRaw, speciesRaw, eventsRaw, sourcesRaw] = await Promise.all([
+  const [periodsRaw, speciesRaw, eventsRaw, sourcesRaw, cosmosRaw] = await Promise.all([
     fetchJson(DATA_FILES.periods),
     fetchJson(DATA_FILES.species),
     fetchOptionalJson(DATA_FILES.events),  // optional — app works without it
     fetchOptionalJson(DATA_FILES.sources), // optional — app works without it
+    fetchOptionalJson(DATA_FILES.cosmos),  // optional — absent = Earth-only timeline
   ]);
 
-  const periods = (periodsRaw.units ?? [])
-    .filter(validatePeriod)
-    .sort((a, b) => b.startMa - a.startMa); // oldest first
+  // Earth + cosmic units share one axis. Cosmos units/events are realm-tagged so the
+  // Timeline can keep them hidden until the user reveals the cosmos.
+  const earthUnits = tagRealm((periodsRaw.units ?? []).filter(validatePeriod), "earth");
+  const cosmosUnits = tagRealm((cosmosRaw?.units ?? []).filter(validatePeriod), "cosmos");
+  const periods = [...earthUnits, ...cosmosUnits].sort((a, b) => b.startMa - a.startMa); // oldest first
 
   const periodIds = new Set(periods.map((p) => p.id));
 
-  const species = (speciesRaw.species ?? [])
-    .filter((s) => validateSpecies(s, periodIds))
-    .sort((a, b) => b.startMa - a.startMa);
+  const species = tagRealm(
+    (speciesRaw.species ?? []).filter((s) => validateSpecies(s, periodIds)),
+    "earth"
+  ).sort((a, b) => b.startMa - a.startMa);
 
-  const events = (eventsRaw?.events ?? [])
-    .filter(validateEvent)
-    .sort((a, b) => b.ma - a.ma);
+  const earthEvents = tagRealm((eventsRaw?.events ?? []).filter(validateEvent), "earth");
+  const cosmosEvents = tagRealm((cosmosRaw?.events ?? []).filter(validateEvent), "cosmos");
+  const events = [...earthEvents, ...cosmosEvents].sort((a, b) => b.ma - a.ma);
 
   const sources = (sourcesRaw?.categories ?? []).filter((c) => c.label);
 

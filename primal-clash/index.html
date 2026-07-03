@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Primal Clash</title>
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ========== MAIN MENU ========== -->
+<div id="main-menu" class="fullscreen-panel">
+  <div class="menu-panel">
+    <h1 class="menu-title">🦖 Primal Clash</h1>
+    <p class="menu-tag">A prehistoric card battle</p>
+    <button id="play-btn" class="menu-btn">▶ &nbsp;Play</button>
+    <button id="online-btn" class="menu-btn">🌐 &nbsp;Play Online</button>
+    <button id="resume-btn" class="menu-btn screen-hidden">⏵ &nbsp;Resume Game</button>
+    <button id="deck-builder-btn" class="menu-btn">🃏 &nbsp;Deck Builder</button>
+    <button id="settings-btn" class="menu-btn">⚙ &nbsp;Settings</button>
+    <button id="quit-btn" class="menu-btn">✖ &nbsp;Quit</button>
+    <div id="menu-deck-info"></div>
+    <div id="quit-note" class="screen-hidden">Your browser blocked closing the window — just close this tab.</div>
+  </div>
+</div>
+
+<!-- ========== DECK BUILDER ========== -->
+<div id="deck-builder" class="screen-hidden">
+  <header class="db-topbar">
+    <h2>🃏 Deck Builder</h2>
+    <button class="back-to-menu">← Back to Menu</button>
+  </header>
+  <div class="db-toolbar">
+    <input id="db-search" type="search" placeholder="🔍 Search name, tribe, skill, era…" autocomplete="off">
+    <div class="db-filter-groups">
+      <div class="chip-row"><span class="chip-label">Cost</span><span id="db-filter-cost" class="chip-row"></span></div>
+      <div class="chip-row"><span class="chip-label">Tribe</span><span id="db-filter-tribe" class="chip-row"></span></div>
+      <div class="chip-row"><span class="chip-label">Skill</span><span id="db-filter-skill" class="chip-row"></span></div>
+      <button id="db-filter-clear" title="Clear search and filters">✕ Clear</button>
+    </div>
+  </div>
+  <div class="db-main">
+    <div id="db-pool"></div>
+    <aside class="db-side">
+      <input id="db-name" maxlength="24" placeholder="Deck name" autocomplete="off">
+      <div class="db-count"><span id="db-count">0</span>/30 cards · ×2 max each · ★ Legendary ×1</div>
+      <div id="db-deck-list"></div>
+      <div class="db-actions">
+        <button id="db-save">💾 Save &amp; Use</button>
+        <button id="db-random">🎲 Random Fill</button>
+        <button id="db-clear">🗑 Clear</button>
+      </div>
+      <div id="db-msg"></div>
+      <h3>Saved Decks</h3>
+      <div id="db-saved"></div>
+    </aside>
+  </div>
+</div>
+
+<!-- ========== SETTINGS ========== -->
+<div id="settings-screen" class="fullscreen-panel screen-hidden">
+  <div class="menu-panel">
+    <h2 class="menu-subtitle">⚙ Settings</h2>
+    <label class="setting-row"><input type="checkbox" id="setting-sound" checked> Sound effects</label>
+    <div id="save-stats"></div>
+    <div class="save-tools">
+      <h3>Save data</h3>
+      <div class="save-btn-row">
+        <button id="save-export-copy">📋 Copy save code</button>
+        <button id="save-export-file">💾 Download save file</button>
+      </div>
+      <textarea id="save-import-text" rows="3" placeholder="Paste a save code here…" spellcheck="false"></textarea>
+      <div class="save-btn-row">
+        <button id="save-import-btn">📥 Import code</button>
+        <button id="save-import-file-btn">📂 Import file</button>
+        <input type="file" id="save-import-file" accept=".txt,.json,.pcsave" hidden>
+        <button id="save-reset">🗑 Reset progress</button>
+      </div>
+      <div id="save-msg"></div>
+    </div>
+    <p class="settings-note">Progress autosaves in this browser. Use a save code to back it up or move it to another device.</p>
+    <button class="back-to-menu menu-btn">← Back to Menu</button>
+  </div>
+</div>
+
+<!-- ========== ONLINE LOBBY ========== -->
+<div id="online-screen" class="fullscreen-panel screen-hidden">
+  <div class="menu-panel online-panel">
+    <h2 class="menu-subtitle">🌐 Play Online</h2>
+
+    <div id="ol-choose">
+      <p class="ol-note">Play a friend over the internet. Your browsers connect directly to each
+        other (peer-to-peer) — no account, nothing stored online. Only share your game code with
+        someone you trust.</p>
+      <label class="ol-row">Your name
+        <input id="ol-name" maxlength="16" placeholder="Chieftain" autocomplete="off">
+      </label>
+      <button id="ol-host-btn" class="menu-btn">🏕 &nbsp;Host Game</button>
+      <div class="ol-join-row">
+        <input id="ol-code" maxlength="4" placeholder="CODE" autocomplete="off" spellcheck="false">
+        <button id="ol-join-btn" class="menu-btn">⚡ Join</button>
+      </div>
+    </div>
+
+    <div id="ol-hosting" class="screen-hidden">
+      <p>Your game code:</p>
+      <div id="ol-code-big" title="Click to copy">····</div>
+      <p class="ol-note">Send this code to your friend — waiting for a challenger…</p>
+    </div>
+
+    <div id="ol-lobby" class="screen-hidden">
+      <p id="ol-opp-line"></p>
+      <label class="ol-row">Your deck
+        <select id="ol-deck"></select>
+      </label>
+      <button id="ol-ready-btn" class="menu-btn">✔ &nbsp;Ready</button>
+      <button id="ol-start-btn" class="menu-btn screen-hidden" disabled>⚔ &nbsp;Start Match</button>
+      <p id="ol-status" class="ol-note"></p>
+    </div>
+
+    <p id="ol-msg" class="ol-error"></p>
+    <p class="ol-note">Don’t refresh during a match — online games can’t be resumed.</p>
+    <button id="ol-back-btn" class="menu-btn">← Back to Menu</button>
+  </div>
+</div>
+
+<!-- Generic online-play modal: disconnect notices, leave confirmation. -->
+<div id="net-modal" class="hidden">
+  <div id="net-modal-panel">
+    <h2 id="net-modal-title"></h2>
+    <p id="net-modal-text"></p>
+    <div id="net-modal-actions"></div>
+  </div>
+</div>
+
+<!-- ========== GAME ========== -->
+<div id="app" class="screen-hidden">
+  <header id="topbar">
+    <h1>🦖 Primal Clash</h1>
+    <div id="hint"></div>
+    <div class="controls">
+      <button id="menu-btn" title="Back to the main menu">☰ Menu</button>
+      <button id="new-game-btn" title="Start a fresh game with new random decks">⟳ New Game</button>
+      <button id="mute-btn" title="Mute">🔊</button>
+    </div>
+  </header>
+
+  <main id="battlefield">
+    <section class="hero-row enemy-row">
+      <div class="hero" id="enemy-hero"></div>
+    </section>
+    <section id="enemy-board" class="board"></section>
+    <section id="biome-banner"></section>
+    <section id="player-board" class="board"></section>
+    <section class="hero-row player-row">
+      <div class="hero" id="player-hero"></div>
+      <button id="end-turn-btn">End Turn ⌛</button>
+    </section>
+    <div id="enemy-amber" class="amber-cluster"></div>
+    <div id="player-amber" class="amber-cluster"></div>
+    <div id="enemy-deck" class="deck-pile" aria-hidden="true"></div>
+    <div id="player-deck" class="deck-pile" aria-hidden="true"></div>
+  </main>
+
+  <aside id="log">
+    <h2>Battle Log</h2>
+    <div id="log-entries"></div>
+  </aside>
+
+  <section id="hand"></section>
+
+  <div id="game-over" class="hidden">
+    <div id="game-over-panel">
+      <h2 id="game-over-title"></h2>
+      <p id="game-over-text"></p>
+      <div class="game-over-actions">
+        <button id="play-again-btn">Play Again</button>
+        <button id="menu-over-btn">Main Menu</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="js/audio.js"></script>
+<script src="js/vendor/peerjs.min.js"></script>
+<script src="js/cards.js"></script>
+<script src="js/save.js"></script>
+<script src="js/animations.js"></script>
+<script src="js/dragdrop.js"></script>
+<script src="js/combat.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/deckbuilder.js"></script>
+<script src="js/menu.js"></script>
+<script src="js/net.js"></script>
+<script src="js/game.js"></script>
+</body>
+</html>

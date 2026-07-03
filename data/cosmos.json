@@ -1,0 +1,288 @@
+{
+  "_comment": "OPTIONAL cosmic prequel to the Earth timeline — the ~9.2 billion years from the Big Bang (13,800 Ma) to the formation of the Solar System (4,600 Ma). Same schema as periods.json/events.json. Everything here is tagged realm:\"cosmos\" at load (dataLoader.js) and lives to the LEFT of the Hadean on the shared axis; it stays hidden behind the 'Before Earth' teaser until revealed. Dates are approximate, rounded for a deep-time axis — refine freely. Delete this file to remove the whole cosmos feature: the app falls back to Earth-only with no errors. Colors are a black→dark-purple 'spacey' family (NOT ICS); the cosmic ribbon renders them as one smooth translucent gradient (see #renderCosmosWash in timeline.js), so adjacent colors should read as a gentle progression. The 'cosmos' eon carries the shared background/audio, inherited down the parentId chain.",
+  "units": [
+    {
+      "id": "cosmos",
+      "name": "The Cosmos",
+      "rank": "eon",
+      "startMa": 13800,
+      "endMa": 4600,
+      "color": "#1a0b2e",
+      "realm": "cosmos",
+      "background": "assets/images/cosmos/cosmos.jpg",
+      "audio": "assets/audio/cosmos.ogg",
+      "overview": "Before the Earth existed, there was the Universe itself. From an unimaginably hot, dense beginning ~13.8 billion years ago, space expanded and cooled, the first atoms formed, gravity gathered gas into the first stars and galaxies, and generations of stars forged the heavier elements. Roughly 9 billion years of cosmic history pass before a particular cloud of enriched gas collapses to make our Sun and its planets.",
+      "info": {
+        "scale": "~9.2 billion years, from the Big Bang to the birth of the Solar System.",
+        "note": "Approximate timeline — cosmological dates carry real uncertainty.",
+        "what changes": "Temperature falls from ~10^32 K to a few kelvin; simple hydrogen and helium are enriched by stars into the elements that later build planets and life."
+      }
+    },
+    {
+      "id": "primordial-era",
+      "name": "Primordial Era",
+      "rank": "era",
+      "parentId": "cosmos",
+      "startMa": 13800,
+      "endMa": 13400,
+      "color": "#1c0730",
+      "realm": "cosmos",
+      "overview": "The first few hundred million years: the Big Bang, the forging of the lightest nuclei, the release of the cosmic microwave background, and the long, starless Dark Ages that followed.",
+      "info": {
+        "notable": "The Universe is opaque, then transparent, then dark — waiting for the first stars."
+      }
+    },
+    {
+      "id": "big-bang-period",
+      "name": "Big Bang & Recombination",
+      "rank": "period",
+      "parentId": "primordial-era",
+      "startMa": 13800,
+      "endMa": 13600,
+      "color": "#2a0b3f",
+      "realm": "cosmos",
+      "overview": "In its first instants the Universe is hotter and denser than anything since. Within minutes, protons and neutrons fuse into the first light nuclei (mostly hydrogen and helium). After ~380,000 years it cools enough for electrons to join nuclei into neutral atoms — and light streams free for the first time as the cosmic microwave background.",
+      "info": {
+        "first three minutes": "Big Bang nucleosynthesis makes ~75% hydrogen, ~25% helium by mass.",
+        "recombination": "~380,000 years after the Big Bang; the Universe becomes transparent.",
+        "relic": "The cosmic microwave background — the oldest light we can see."
+      }
+    },
+    {
+      "id": "cosmic-dark-ages-period",
+      "name": "Cosmic Dark Ages",
+      "rank": "period",
+      "parentId": "primordial-era",
+      "startMa": 13600,
+      "endMa": 13400,
+      "color": "#120118",
+      "realm": "cosmos",
+      "overview": "With no stars yet shining, the Universe is dark — a slowly cooling fog of neutral hydrogen and helium, gently pulled by gravity into the faint scaffolding of dark matter. These seeds will grow into the first luminous objects.",
+      "info": {
+        "lighting": "No stars — only the fading afterglow of the Big Bang.",
+        "groundwork": "Gravity amplifies tiny density ripples into the first collapsing clouds."
+      }
+    },
+    {
+      "id": "cosmic-dawn-era",
+      "name": "Cosmic Dawn",
+      "rank": "era",
+      "parentId": "cosmos",
+      "startMa": 13400,
+      "endMa": 12800,
+      "color": "#2e1450",
+      "realm": "cosmos",
+      "overview": "The first stars and galaxies switch on, ending the Dark Ages. Their fierce ultraviolet light gradually re-ionizes the hydrogen filling space.",
+      "info": {
+        "notable": "The Universe lights up and becomes transparent to ultraviolet light once more."
+      }
+    },
+    {
+      "id": "first-stars-period",
+      "name": "First Stars",
+      "rank": "period",
+      "parentId": "cosmic-dawn-era",
+      "startMa": 13400,
+      "endMa": 13200,
+      "color": "#2a1148",
+      "realm": "cosmos",
+      "overview": "The first stars (Population III) ignite from pristine hydrogen and helium — enormous, brilliant and short-lived. When they die as supernovae they scatter the first heavier elements (carbon, oxygen, iron) into space, seeding all later chemistry.",
+      "info": {
+        "composition": "Hydrogen and helium only — no metals yet.",
+        "legacy": "Their deaths forge and spread the first heavy elements."
+      }
+    },
+    {
+      "id": "reionization-period",
+      "name": "Reionization",
+      "rank": "period",
+      "parentId": "cosmic-dawn-era",
+      "startMa": 13200,
+      "endMa": 12800,
+      "color": "#3a1a60",
+      "realm": "cosmos",
+      "overview": "Light from the first stars and young galaxies strips electrons from the neutral hydrogen between galaxies, re-ionizing nearly all of intergalactic space — the last great phase change of the cosmic gas.",
+      "info": {
+        "process": "Ultraviolet radiation re-ionizes intergalactic hydrogen.",
+        "completes": "By roughly one billion years after the Big Bang."
+      }
+    },
+    {
+      "id": "galactic-era",
+      "name": "Galactic Era",
+      "rank": "era",
+      "parentId": "cosmos",
+      "startMa": 12800,
+      "endMa": 4600,
+      "color": "#341c60",
+      "realm": "cosmos",
+      "overview": "Galaxies grow and merge, star formation across the cosmos rises to a peak and then declines, and our own Milky Way assembles. Generation after generation of stars enrich the gas until, at last, a chemically mature cloud is ready to make the Sun.",
+      "info": {
+        "notable": "The familiar Universe of galaxies takes shape; the Milky Way matures."
+      }
+    },
+    {
+      "id": "galaxy-assembly-period",
+      "name": "Galaxy Assembly",
+      "rank": "period",
+      "parentId": "galactic-era",
+      "startMa": 12800,
+      "endMa": 10500,
+      "color": "#2c1652",
+      "realm": "cosmos",
+      "overview": "Small protogalaxies collide and merge into larger ones. Supermassive black holes grow at their cores, blazing as quasars, while the cosmic web of filaments and voids becomes well defined.",
+      "info": {
+        "structure": "The cosmic web of galaxies, filaments and voids takes form.",
+        "engines": "Growing supermassive black holes shine as quasars."
+      }
+    },
+    {
+      "id": "cosmic-noon-period",
+      "name": "Cosmic Noon",
+      "rank": "period",
+      "parentId": "galactic-era",
+      "startMa": 10500,
+      "endMa": 8000,
+      "color": "#45236f",
+      "realm": "cosmos",
+      "overview": "The peak of cosmic star formation, around 3–4 billion years after the Big Bang. Galaxies build the bulk of their stars now, flooding the Universe with light and steadily enriching the gas with heavy elements.",
+      "info": {
+        "peak": "Star formation across the Universe reaches its all-time high.",
+        "enrichment": "Heavy-element abundances climb toward Sun-like levels."
+      }
+    },
+    {
+      "id": "milky-way-period",
+      "name": "Milky Way Maturation",
+      "rank": "period",
+      "parentId": "galactic-era",
+      "startMa": 8000,
+      "endMa": 5000,
+      "color": "#301d5e",
+      "realm": "cosmos",
+      "overview": "Our galaxy settles into the grand spiral we know. Its thin disk takes shape and fills with successive generations of stars, building reservoirs of gas already salted with the carbon, oxygen, silicon and iron that planets require.",
+      "info": {
+        "home": "The Milky Way's thin disk forms and matures.",
+        "readiness": "The galaxy's gas is now rich enough to build rocky worlds."
+      }
+    },
+    {
+      "id": "presolar-nebula-period",
+      "name": "Pre-Solar Nebula",
+      "rank": "period",
+      "parentId": "galactic-era",
+      "startMa": 5000,
+      "endMa": 4600,
+      "color": "#3b2272",
+      "realm": "cosmos",
+      "overview": "A giant molecular cloud in one arm of the Milky Way — enriched by earlier stars and likely jolted by a nearby supernova — begins to collapse. Its center will become the Sun; the leftover disk of gas and dust will become the planets, including Earth. This is the doorway into the Hadean.",
+      "info": {
+        "trigger": "Possibly a nearby supernova compresses the cloud into collapse.",
+        "outcome": "The Sun ignites; a protoplanetary disk forms the planets.",
+        "handover": "Flows directly into Earth's Hadean eon at ~4.6 Ga."
+      }
+    }
+  ],
+  "events": [
+    {
+      "id": "the-big-bang",
+      "name": "The Big Bang",
+      "ma": 13800,
+      "category": "origin",
+      "text": "Space, time, matter and energy begin in an unimaginably hot, dense state and start expanding — the origin of the observable Universe.",
+      "overview": "The Big Bang is not an explosion in space but the rapid expansion of space itself from an extraordinarily hot, dense beginning. In a fraction of a second the Universe may have inflated by an enormous factor; within minutes it cooled enough to forge the first atomic nuclei. Everything that exists — every atom in every star and in you — traces back to this moment ~13.8 billion years ago.",
+      "info": {
+        "when": "~13.8 billion years ago",
+        "temperature": "From ~10^32 K, cooling as space expands",
+        "produced": "The lightest elements; the seeds of all later structure"
+      }
+    },
+    {
+      "id": "recombination-cmb",
+      "name": "First Light (Cosmic Microwave Background)",
+      "ma": 13780,
+      "category": "light",
+      "text": "About 380,000 years after the Big Bang, atoms form and light travels freely for the first time — the relic glow we now see as the cosmic microwave background.",
+      "overview": "As the Universe cooled to about 3000 K, free electrons combined with nuclei into neutral atoms ('recombination'). Suddenly photons could travel without constantly scattering, and the Universe became transparent. That ancient light, stretched by 13.8 billion years of cosmic expansion into microwaves, still bathes the whole sky today as the cosmic microwave background — a baby picture of the cosmos.",
+      "info": {
+        "when": "~380,000 years after the Big Bang",
+        "what": "The Universe becomes transparent",
+        "legacy": "The cosmic microwave background radiation"
+      }
+    },
+    {
+      "id": "first-stars-ignite",
+      "name": "The First Stars Ignite",
+      "ma": 13350,
+      "category": "stars",
+      "text": "The first stars switch on, ending the cosmic Dark Ages and forging the first elements heavier than helium.",
+      "overview": "Hundreds of millions of years after the Big Bang, the first stars — massive, brilliant and made of pristine hydrogen and helium — ignited and ended the Dark Ages. Living fast and dying young as supernovae, they scattered the first carbon, oxygen and iron into space, beginning the long enrichment that makes planets and life possible.",
+      "info": {
+        "stars": "Population III — the first generation, free of heavy elements",
+        "ends": "The cosmic Dark Ages",
+        "begins": "The chemical enrichment of the Universe"
+      }
+    },
+    {
+      "id": "cosmic-reionization",
+      "name": "Cosmic Reionization",
+      "ma": 13000,
+      "category": "light",
+      "text": "Starlight re-ionizes the hydrogen filling space, the last great change of state for the cosmic gas.",
+      "overview": "Ultraviolet light from the first stars and galaxies gradually ionized the neutral hydrogen that filled intergalactic space, completing by roughly a billion years after the Big Bang. From then on, the gas between galaxies has been almost entirely ionized.",
+      "info": {
+        "driver": "Ultraviolet light from early stars and galaxies",
+        "completes": "~1 billion years after the Big Bang"
+      }
+    },
+    {
+      "id": "first-galaxies",
+      "name": "Galaxies Take Shape",
+      "ma": 12000,
+      "category": "galaxies",
+      "text": "Protogalaxies merge into larger galaxies and the cosmic web of structure becomes well defined.",
+      "overview": "Gravity drew gas and dark matter into ever-larger structures: small protogalaxies merged into recognizable galaxies, supermassive black holes grew at their cores and blazed as quasars, and the cosmic web of filaments and voids took on the form we map today.",
+      "info": {
+        "structure": "The cosmic web of galaxies and voids",
+        "engines": "Quasars powered by growing supermassive black holes"
+      }
+    },
+    {
+      "id": "cosmic-noon",
+      "name": "Cosmic Noon — Peak Star Formation",
+      "ma": 10000,
+      "category": "stars",
+      "text": "Around 3–4 billion years after the Big Bang, the Universe builds stars faster than at any time before or since.",
+      "overview": "At 'cosmic noon' the rate of star formation across the Universe reached its all-time peak. Galaxies assembled the bulk of their stars during this era, brightening the cosmos and driving heavy-element abundances up toward the levels our own Sun would later inherit.",
+      "info": {
+        "peak": "The highest cosmic star-formation rate",
+        "result": "Most of today's stars are built; gas grows chemically rich"
+      }
+    },
+    {
+      "id": "milky-way-disk",
+      "name": "Birth of the Milky Way's Disk",
+      "ma": 7000,
+      "category": "galaxies",
+      "text": "Our galaxy settles into a mature spiral, its thin disk filling with stars and planet-building elements.",
+      "overview": "Although some of the Milky Way's stars are nearly as old as the Universe, our galaxy's familiar thin disk assembled later, growing through mergers and steady star formation. By now its gas is enriched enough — in carbon, oxygen, silicon and iron — to build rocky planets.",
+      "info": {
+        "home": "The Milky Way matures into a grand spiral",
+        "significance": "Its gas can now form rocky worlds"
+      }
+    },
+    {
+      "id": "solar-system-forms",
+      "name": "Birth of the Solar System",
+      "ma": 4600,
+      "category": "origin",
+      "text": "A collapsing cloud of enriched gas and dust forms the Sun and its planets — the threshold of Earth's own story.",
+      "overview": "About 4.6 billion years ago, a giant molecular cloud — perhaps nudged by a nearby supernova — collapsed. Its center grew dense and hot enough to ignite as the Sun; the surrounding disk of gas and dust coalesced into the planets. One of them, the third from the Sun, becomes Earth. From here the cosmic timeline hands over to the Hadean.",
+      "info": {
+        "when": "~4.6 billion years ago",
+        "forms": "The Sun, the planets and Earth",
+        "handover": "The start of the Earth timeline (Hadean eon)"
+      }
+    }
+  ]
+}

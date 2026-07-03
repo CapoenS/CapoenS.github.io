@@ -60,6 +60,21 @@ export function niceTickStep(span, targetCount = 8) {
   return 10 * magnitude;
 }
 
+/**
+ * The most specific unit (smallest span) whose range contains a given Ma.
+ * Accepts any iterable of units (array, Map.values(), ...).
+ */
+export function unitForMa(units, ma) {
+  let best = null;
+  for (const u of units) {
+    if (ma <= u.startMa && ma >= u.endMa &&
+        (!best || u.startMa - u.endMa < best.startMa - best.endMa)) {
+      best = u;
+    }
+  }
+  return best;
+}
+
 /** Build a placeholder element for a missing image. */
 export function imagePlaceholder(label) {
   const div = document.createElement("div");
@@ -77,6 +92,7 @@ export function imageWithFallback(src, alt) {
   img.src = src;
   img.alt = alt;
   img.loading = "lazy";
+  img.decoding = "async"; // decode off the main thread; avoids jank when a big JPEG lands
   img.addEventListener("error", () => {
     img.replaceWith(imagePlaceholder(alt));
   });
