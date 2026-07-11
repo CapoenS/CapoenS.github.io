@@ -15,6 +15,7 @@
     <p class="menu-tag">A prehistoric card battle</p>
     <button id="play-btn" class="menu-btn">▶ &nbsp;Play</button>
     <button id="online-btn" class="menu-btn">🌐 &nbsp;Play Online</button>
+    <button id="sandbox-menu-btn" class="menu-btn">🧪 &nbsp;Sandbox</button>
     <button id="resume-btn" class="menu-btn screen-hidden">⏵ &nbsp;Resume Game</button>
     <button id="deck-builder-btn" class="menu-btn">🃏 &nbsp;Deck Builder</button>
     <button id="settings-btn" class="menu-btn">⚙ &nbsp;Settings</button>
@@ -139,6 +140,7 @@
     <h1>🦖 Primal Clash</h1>
     <div id="hint"></div>
     <div class="controls">
+      <button id="sandbox-btn" class="screen-hidden" title="Sandbox tools — conjure any card, boost the AI">🧪 Cards</button>
       <button id="menu-btn" title="Back to the main menu">☰ Menu</button>
       <button id="new-game-btn" title="Start a fresh game with new random decks">⟳ New Game</button>
       <button id="mute-btn" title="Mute">🔊</button>
@@ -146,16 +148,26 @@
   </header>
 
   <main id="battlefield">
-    <section class="hero-row enemy-row">
-      <div class="hero" id="enemy-hero"></div>
-    </section>
-    <section id="enemy-board" class="board"></section>
-    <section id="biome-banner"></section>
-    <section id="player-board" class="board"></section>
-    <section class="hero-row player-row">
-      <div class="hero" id="player-hero"></div>
+    <div id="side-panels">
+      <div class="side-panel" id="enemy-hero"></div>
+      <div class="side-panel" id="player-hero"></div>
+    </div>
+    <div id="field-stack">
+      <div id="enemy-hand" class="enemy-hand" aria-hidden="true"></div>
+      <section id="enemy-field"   class="board field-row"></section>
+      <section id="enemy-battle"  class="board battle-row"></section>
+      <section id="biome-banner"></section>
+      <section id="player-battle" class="board battle-row"></section>
+      <section id="player-field"  class="board field-row"></section>
+    </div>
+    <div id="spell-queue" aria-hidden="true"></div>
+  <svg id="target-arrow" aria-hidden="true"></svg>
+    <div id="combat-controls">
+      <button id="combat-cancel-btn" class="hidden">✖ Cancel</button>
+      <button id="combat-btn" class="hidden">Attack!</button>
       <button id="end-turn-btn">End Turn ⌛</button>
-    </section>
+      <button id="surrender-btn" title="Surrender the match">🏳️</button>
+    </div>
     <div id="enemy-amber" class="amber-cluster"></div>
     <div id="player-amber" class="amber-cluster"></div>
     <div id="enemy-deck" class="deck-pile" aria-hidden="true"></div>
@@ -168,6 +180,24 @@
   </aside>
 
   <section id="hand"></section>
+
+  <!-- ===== SANDBOX PANEL (sandbox mode only) ===== -->
+  <div id="sandbox-panel" class="hidden">
+    <div id="sandbox-inner">
+      <div class="sb-head">
+        <h3>🧪 Sandbox</h3>
+        <span class="sb-label">Give card to:</span>
+        <button id="sb-target-you" class="chip on" type="button">You</button>
+        <button id="sb-target-ai" class="chip" type="button">AI</button>
+        <button id="sb-ai-amber" type="button" title="AI gains +3 amber and +3 max amber (cap 10)">🔶 AI +3 Amber</button>
+        <button id="sb-ai-draw" type="button" title="The AI draws 2 cards from its deck">🂠 AI draws 2</button>
+        <input id="sb-search" type="search" placeholder="🔍 Search cards…" autocomplete="off">
+        <button id="sb-close" type="button">✕ Close</button>
+      </div>
+      <div id="sb-msg"></div>
+      <div id="sb-cards"></div>
+    </div>
+  </div>
 
   <div id="game-over" class="hidden">
     <div id="game-over-panel">

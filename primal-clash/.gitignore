@@ -1,0 +1,6 @@
+# OS junk
+Thumbs.db
+.DS_Store
+
+# local Claude Code settings (keep serve.ps1 + launch.json — they're the dev server)
+.claude/settings.local.json

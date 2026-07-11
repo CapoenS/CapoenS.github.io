@@ -4,8 +4,8 @@
    authoritative: the HOST runs the full engine
    and broadcasts redacted state snapshots; the
    GUEST renders snapshots and sends action
-   intents shaped like the two engine entry
-   points (playCardFromHand / performAttack).
+   intents shaped like the engine entry points
+   (playCardFromHand / declareAttack / commitBlocks).
 
    The free PeerJS cloud (0.peerjs.com) is only
    used to introduce the two browsers to each
@@ -26,7 +26,7 @@
 "use strict";
 
 const NET = (() => {
-  const PROTO = 1;
+  const PROTO = 3;   // v3: two-target On Summon (play intent carries targetUid2)
   const ID_PREFIX = 'primal-clash-';
   /* Unambiguous alphabet: no 0/O, 1/I/L. */
   const CODE_ALPHABET = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
@@ -47,6 +47,7 @@ const NET = (() => {
 
   let lastSentState = '';    // host: JSON dedupe for the render broadcast
   let prevHandUids = null;   // guest: for re-deriving the draw-in animation
+  let fxQueue = [];          // host: effects captured since the last broadcast
 
   /* ---------------- tiny DOM helpers ---------------- */
   const $id = (i) => document.getElementById(i);
@@ -107,6 +108,7 @@ const NET = (() => {
      it is discarded to keep Resume honest. */
   function teardown() {
     if (typeof G !== 'undefined' && G && (G.remote || (G.players && G.players[1].isRemote))) G = null;
+    if (typeof clearCombatStage === 'function') clearCombatStage();
     if (peer) { try { peer.destroy(); } catch (e) { /* already dead */ } }
     peer = null;
     conn = null;
@@ -119,6 +121,7 @@ const NET = (() => {
     oppWantsRematch = false;
     lastSentState = '';
     prevHandUids = null;
+    fxQueue = [];
     hostRetries = 0;
   }
 
@@ -326,6 +329,117 @@ const NET = (() => {
     });
   }
 
+  /* ---------------- game feel: FX/SFX capture & replay ----------------
+     Sounds and imperative animations (lunges, floating numbers, shakes)
+     are fired by the engine WHILE it resolves actions — and the engine
+     only runs on the host. So: wrap FX/SFX once; while the host engine
+     is resolving (G.busy), every effect is also queued and shipped with
+     the next state broadcast; the guest replays the list against its own
+     DOM after applying the snapshot. G.busy as the gate means the host's
+     local UI feedback (misclick shakes) never leaks into the stream. */
+  const REPLAY_SFX = ['playCard', 'attack', 'damage', 'death', 'heal', 'freeze',
+    'footstep', 'roar', 'slam', 'whoosh', 'rumble', 'meteorFall', 'explosion', 'shatter', 'sparkleSfx',
+    'mystic', 'splash'];
+  // win/lose are deliberately NOT relayed: each side plays its own outcome.
+
+  function capturing() {
+    return mode === 'host' && inMatchFlag && typeof G !== 'undefined' && G && G.busy;
+  }
+
+  /* Serializable reference to an effect's element: creature uid or hero
+     index (host-native — the guest flips hero indices on replay). */
+  function elRef(el) {
+    if (!el) return null;
+    if (el.dataset && el.dataset.uid) return { u: Number(el.dataset.uid) };
+    if (el.id === 'player-hero') return { h: 0 };
+    if (el.id === 'enemy-hero') return { h: 1 };
+    return null;
+  }
+
+  function resolveRef(r) {
+    if (!r) return null;
+    if (r.u != null) return elByUid(r.u);
+    if (r.h != null) return heroEl(1 - r.h);
+    return null;
+  }
+
+  (function wrapEffects() {
+    if (typeof SFX === 'undefined' || typeof FX === 'undefined') return;
+    for (const n of REPLAY_SFX) {
+      const orig = SFX[n].bind(SFX);
+      SFX[n] = () => {
+        if (capturing()) fxQueue.push({ k: 'sfx', n });
+        orig();
+      };
+    }
+    const origFloat = FX.floatText.bind(FX);
+    FX.floatText = (el, text, cls) => {
+      if (capturing()) {
+        const at = elRef(el);
+        if (at) fxQueue.push({ k: 'float', at, txt: String(text), cls: cls || 'dmg' });
+      }
+      origFloat(el, text, cls);
+    };
+    const origShake = FX.shake.bind(FX);
+    FX.shake = (el) => {
+      if (capturing()) {
+        const at = elRef(el);
+        if (at) fxQueue.push({ k: 'shake', at });
+      }
+      origShake(el);
+    };
+    const origLunge = FX.lunge.bind(FX);
+    FX.lunge = (fromEl, toEl, power) => {
+      if (capturing()) {
+        const from = elRef(fromEl);
+        const to = elRef(toEl);
+        if (from && to) fxQueue.push({ k: 'lunge', from, to, p: power });
+      }
+      return origLunge(fromEl, toEl, power);
+    };
+    const origImpact = FX.impact.bind(FX);
+    FX.impact = (el, mag) => {
+      if (capturing()) fxQueue.push({ k: 'impact', at: elRef(el), mag: mag == null ? 1 : mag });
+      origImpact(el, mag);
+    };
+    const origScreenShake = FX.screenShake.bind(FX);
+    FX.screenShake = (intensity, dur) => {
+      if (capturing()) fxQueue.push({ k: 'sshake', i: intensity, d: dur });
+      origScreenShake(intensity, dur);
+    };
+    /* Generic relay for every registered (el, opts) particle effect —
+       new effects only need a name in FX.RELAY / FX.RELAY_AWAIT. */
+    for (const n of (FX.RELAY || [])) {
+      const orig = FX[n].bind(FX);
+      FX[n] = (el, o) => {
+        if (capturing()) fxQueue.push({ k: 'fxg', n, at: elRef(el), o });
+        orig(el, o);
+      };
+    }
+    for (const n of (FX.RELAY_AWAIT || [])) {
+      const orig = FX[n].bind(FX);
+      FX[n] = (el, o) => {
+        if (capturing()) fxQueue.push({ k: 'fxa', n, at: elRef(el), o });
+        return orig(el, o);
+      };
+    }
+  })();
+
+  /* Guest: replay a broadcast effect list. Sequential, awaiting only the
+     lunge — that reproduces the host's wind-up → impact pacing. */
+  async function replayEffects(list) {
+    for (const e of list) {
+      if (e.k === 'sfx' && REPLAY_SFX.includes(e.n)) SFX[e.n]();
+      else if (e.k === 'float') FX.floatText(resolveRef(e.at), e.txt, e.cls);
+      else if (e.k === 'shake') FX.shake(resolveRef(e.at));
+      else if (e.k === 'lunge') await FX.lunge(resolveRef(e.from), resolveRef(e.to), e.p);
+      else if (e.k === 'impact') FX.impact(resolveRef(e.at), e.mag);
+      else if (e.k === 'sshake') FX.screenShake(e.i, e.d);
+      else if (e.k === 'fxg' && FX.RELAY.includes(e.n)) FX[e.n](resolveRef(e.at), e.o);
+      else if (e.k === 'fxa' && FX.RELAY_AWAIT.includes(e.n)) await FX[e.n](resolveRef(e.at), e.o);
+    }
+  }
+
   /* ---------------- host: snapshot broadcast ---------------- */
 
   /* Log lines for the guest: public strings pass through; the host's
@@ -347,6 +461,22 @@ const NET = (() => {
     return c;
   }
 
+  /* Combat state for the guest: player indices flipped (guest = 0). The
+     quick queue keeps its ORDER and COUNT (so the guest can show a spell
+     token per queued spell) but the host's spells are redacted to hidden
+     placeholders — their contents stay secret until they resolve. */
+  function serializeCombat() {
+    if (!G.combat) return null;
+    return {
+      phase: G.combat.phase,
+      attackerIdx: 1 - G.combat.attackerIdx,
+      lanes: G.combat.lanes.map((l) => ({ aUid: l.aUid, bUid: l.bUid, stalkerLock: l.stalkerLock })),
+      quicks: G.combat.quicks.map((q) => q.side === 1
+        ? { side: 0, card: q.card, targetUid: q.targetUid }   // guest's own → visible, flipped to side 0
+        : { side: 1, hidden: true }),                          // host's → hidden placeholder, flipped to side 1
+    };
+  }
+
   /* The guest's entire view of the game, in the guest's own orientation
      (it sees itself as player 0) with hidden zones redacted to counts. */
   function serializeForGuest() {
@@ -359,11 +489,14 @@ const NET = (() => {
       busy: G.busy,
       active: 1 - G.active,
       winner: G.winner == null ? null : 1 - G.winner,
+      attackUsed: G.attackUsed,
       biome: G.biome,
+      combat: serializeCombat(),
       log: logForGuest(G.log.slice(-80)),
       you: {
         name: guest.name, hp: guest.hp, maxHp: guest.maxHp,
         amber: guest.amber, maxAmber: guest.maxAmber,
+        qmber: guest.qmber, qmberMax: guest.qmberMax, fatigue: guest.fatigue,
         hand: guest.hand.map(stripDrawn),
         deckCount: guest.deck.length,
         board: guest.board,
@@ -371,6 +504,7 @@ const NET = (() => {
       opp: {
         name: host.name, hp: host.hp, maxHp: host.maxHp,
         amber: host.amber, maxAmber: host.maxAmber,
+        qmber: host.qmber, qmberMax: host.qmberMax, fatigue: host.fatigue,
         handCount: host.hand.length,
         deckCount: host.deck.length,
         board: host.board,
@@ -386,9 +520,10 @@ const NET = (() => {
     if (typeof G === 'undefined' || !G || !G.players[1].isRemote) return;
     const s = serializeForGuest();
     const js = JSON.stringify(s);
-    if (js === lastSentState) return;
+    const fx = fxQueue.length ? fxQueue.splice(0, fxQueue.length) : null;
+    if (js === lastSentState && !fx) return;
     lastSentState = js;
-    conn.send({ v: PROTO, type: 'state', s: JSON.parse(js) });
+    conn.send({ v: PROTO, type: 'state', s: JSON.parse(js), a: fx || undefined });
   }
 
   /* Force a fresh snapshot — used after rejecting a guest intent so the
@@ -403,8 +538,7 @@ const NET = (() => {
     const hadG = typeof G !== 'undefined' && !!G && inMatchFlag;
     const prevOver = hadG ? G.over : false;
     const prevGen = hadG ? G.gen : null;
-    const prevSelUid = hadG && G.selectedAttacker ? G.selectedAttacker.uid : null;
-
+    const prevCombatKey = hadG ? (G.combat ? G.combat.phase : 'none') : null;
     if (prevGen !== s.gen) {   // new game (first start or rematch)
       prevHandUids = null;
       iWantRematch = false;
@@ -416,6 +550,7 @@ const NET = (() => {
       idx: 0, isAI: false,
       name: s.you.name, hp: s.you.hp, maxHp: s.you.maxHp,
       amber: s.you.amber, maxAmber: s.you.maxAmber,
+      qmber: s.you.qmber || 0, qmberMax: s.you.qmberMax || 3, fatigue: s.you.fatigue || 0,
       hand: s.you.hand,
       board: s.you.board,
       deck: new Array(s.you.deckCount).fill(null),   // ui only reads .length
@@ -424,6 +559,7 @@ const NET = (() => {
       idx: 1, isAI: false,
       name: s.opp.name, hp: s.opp.hp, maxHp: s.opp.maxHp,
       amber: s.opp.amber, maxAmber: s.opp.maxAmber,
+      qmber: s.opp.qmber || 0, qmberMax: s.opp.qmberMax || 3, fatigue: s.opp.fatigue || 0,
       hand: Array.from({ length: s.opp.handCount }, () => ({ hidden: true })),
       board: s.opp.board,
       deck: new Array(s.opp.deckCount).fill(null),
@@ -440,6 +576,21 @@ const NET = (() => {
       if (s.opp.deckCount < G.players[1].deck.length) pulseDeckPile(1);
     }
 
+    /* Rebuild combat (indices already flipped host-side). */
+    const combat = s.combat ? {
+      phase: s.combat.phase,
+      attackerIdx: s.combat.attackerIdx,
+      lanes: s.combat.lanes,
+      quicks: s.combat.quicks || [],
+    } : null;
+    /* The combat window changed under me (phase advanced, combat ended, or a
+       new game) → my in-progress staging is stale, drop it. A same-phase
+       resync leaves my staging intact. */
+    const newCombatKey = combat ? combat.phase : 'none';
+    if (typeof clearCombatStage === 'function' && prevCombatKey !== null && prevCombatKey !== newCombatKey) {
+      clearCombatStage();
+    }
+
     G = {
       remote: true,   // guest-side snapshot, not a locally simulated game
       gen: s.gen,
@@ -450,8 +601,8 @@ const NET = (() => {
       over: s.over,
       winner: s.winner,
       busy: s.busy,
-      pendingEvent: null,
-      selectedAttacker: prevSelUid == null ? null : (you.board.find((c) => c.uid === prevSelUid) || null),
+      combat,
+      attackUsed: !!s.attackUsed,
       log: s.log,
     };
     render();
@@ -460,7 +611,12 @@ const NET = (() => {
     if (!prevOver && s.over) {                     // game just ended
       if (typeof SAVE !== 'undefined') SAVE.recordResult(s.winner === 0);
       if (s.winner === 0) SFX.win(); else SFX.lose();
-      showGameOver();
+      /* Mirror the host: the loser's panel collapses, THEN the overlay. */
+      const loserIdx = s.winner === 0 ? 1 : 0;
+      (async () => {
+        await FX.heroDeath(heroEl(loserIdx));
+        if (G && G.over) showGameOver();
+      })();
     }
   }
 
@@ -475,26 +631,65 @@ const NET = (() => {
      the guest picks the target here, on its own snapshot, using the same
      modal as single-player — the host never opens a picker for us. */
   async function playCard(card, dropTarget) {
-    let target = dropTarget;
+    let target = dropTarget, target2;
     if (card.type === 'creature' && card.onSummon) {
       const def = ON_SUMMON[card.onSummon.id];
       if (def && def.targets) {
-        const targets = def.targets(0, card).filter((t) => !t.dying);
-        if (targets.length) {
-          target = await uiChooseTarget(targets, `${card.name} — On Summon: click a highlighted target.`);
-          if (!target) { render(); return; }   // Escape = cancel the play entirely
+        /* Pre-pick On Summon target(s) locally, then ship the uid(s) — the
+           host never opens a modal for us. Two-target effects (targets2,
+           e.g. Gigantopithecus) send both. Escape cancels the whole play. */
+        const t1s = def.targets(0, card).filter((t) => !t.dying);
+        if (t1s.length) {
+          const label1 = def.prompt ? def.prompt(1) : 'On Summon: click a highlighted target.';
+          target = await uiChooseTarget(t1s, `${card.name} — ${label1}`, card.uid);
+          if (!target) { render(); return; }
+        }
+        if (def.targets2 && target) {
+          const t2s = def.targets2(0, card, target).filter((t) => !t.dying);
+          if (t2s.length) {
+            const label2 = def.prompt ? def.prompt(2) : 'On Summon: click a highlighted target.';
+            target2 = await uiChooseTarget(t2s, `${card.name} — ${label2}`, card.uid);
+            if (!target2) { render(); return; }
+          }
         }
       }
     }
-    lockAndSend({ type: 'play', uid: card.uid, targetUid: target ? target.uid : undefined });
-  }
-
-  function sendAttack(attackerUid, target) {
-    lockAndSend({ type: 'attack', attackerUid, target });
+    lockAndSend({
+      type: 'play', uid: card.uid,
+      targetUid: target ? target.uid : undefined,
+      targetUid2: target2 ? target2.uid : undefined,
+    });
   }
 
   function sendEndTurn() {
     lockAndSend({ type: 'endTurn' });
+  }
+
+  /* Surrender (guest): the host zeroes our leader — no optimistic lock
+     needed, the resulting snapshot ends the game. */
+  function sendSurrender() {
+    send({ type: 'surrender' });
+  }
+
+  /* Emotes travel outside the intent system: allowed anytime, both ways. */
+  function sendEmote(e) {
+    send({ type: 'emote', e: String(e).slice(0, 4) });
+  }
+
+  /* Combat intents (guest). Payloads are uid-based; the host re-validates
+     everything through the engine commit functions. Four steps: declare
+     attackers, assign blocks, attacker casts spells, defender casts. */
+  function sendCombatDeclare(decl) {
+    lockAndSend({ type: 'combatDeclare', lanes: decl.lanes });
+  }
+  function sendCombatBlocks(decl) {
+    lockAndSend({ type: 'combatBlocks', blocks: decl.blocks });
+  }
+  function sendCombatAttackerCast(decl) {
+    lockAndSend({ type: 'combatAttackerCast', quicks: decl.quicks });
+  }
+  function sendCombatDefenderCast(decl) {
+    lockAndSend({ type: 'combatDefenderCast', quicks: decl.quicks });
   }
 
   function requestRematch() {
@@ -581,8 +776,14 @@ const NET = (() => {
         updateLobbyStatus();
         break;
       }
-      case 'play': case 'attack': case 'endTurn':
+      case 'play': case 'endTurn':
+      case 'combatDeclare': case 'combatBlocks':
+      case 'combatAttackerCast': case 'combatDefenderCast':
+      case 'surrender':
         handleIntent(m);
+        break;
+      case 'emote':
+        if (typeof showEmote === 'function') showEmote(1, m.e);
         break;
       case 'rematch':
         oppWantsRematch = true;
@@ -634,10 +835,14 @@ const NET = (() => {
           showScreen('app');
         }
         applySnapshot(m.s);
+        if (Array.isArray(m.a)) replayEffects(m.a);
         break;
       case 'rematch':
         oppWantsRematch = true;
         if (!iWantRematch) { const el = $id('game-over-text'); if (el) el.textContent = `${oppName} wants a rematch — hit Play Again!`; }
+        break;
+      case 'emote':
+        if (typeof showEmote === 'function') showEmote(1, m.e);
         break;
       case 'concede':
         if (typeof G !== 'undefined' && G && !G.over && inMatchFlag) {
@@ -679,13 +884,27 @@ const NET = (() => {
   }
 
   async function handleIntent(m) {
-    if (typeof G === 'undefined' || !G || G.over || G.active !== 1 || G.busy || !G.players[1].isRemote) {
+    /* Surrender is allowed at ANY time — even off-turn or mid-combat. */
+    if (m.type === 'surrender') {
+      if (typeof G === 'undefined' || !G || G.over || !G.players[1].isRemote) return;
+      log(`${G.players[1].name} raises the white flag!`);
+      G.players[1].hp = 0;
+      checkWin();
+      return;
+    }
+    /* Phase-aware gate: actingSide() === 1 covers BOTH cases — the guest
+       acting on its own turn (play/endTurn/combatDeclare), and the guest
+       acting OFF-TURN as the defender during the block phase
+       (combatBlocks), when G.active is 0 but combat.phase === 'block' with
+       the host as attacker. All legality lives in the engine entry points. */
+    if (typeof G === 'undefined' || !G || G.over || !G.players[1].isRemote || actingSide() !== 1) {
       resync();
       return;
     }
     const gen = G.gen;
 
     if (m.type === 'endTurn') {
+      if (G.combat) { resync(); return; }
       await endTurn();
       return;   // startTurn renders → broadcast happens on its own
     }
@@ -694,9 +913,10 @@ const NET = (() => {
       const card = G.players[1].hand.find((c) => c.uid === m.uid);
       if (!card) { resync(); return; }
       const target = findCreatureByUid(m.targetUid);
+      const target2 = findCreatureByUid(m.targetUid2);   // two-target On Summon (Gigantopithecus)
       G.busy = true;   // keep the guest locked while the play resolves
       render();
-      const ok = await playCardFromHand(1, card.uid, target);
+      const ok = await playCardFromHand(1, card.uid, target, target2);
       if (!G || G.gen !== gen) return;
       if (!G.over) G.busy = false;
       render();
@@ -704,25 +924,32 @@ const NET = (() => {
       return;
     }
 
-    if (m.type === 'attack') {
-      const attacker = G.players[1].board.find((c) => c.uid === m.attackerUid);
-      if (!attacker || !creatureReady(attacker)) { resync(); return; }
-      const tset = validAttackTargets(1, attacker);
-      let target;
-      if (m.target === 'leader') {
-        if (!tset.leader) { resync(); return; }
-        target = 'leader';
-      } else {
-        target = G.players[0].board.find((c) => c.uid === m.target);
-        if (!target || !tset.creatures.includes(target)) { resync(); return; }
-      }
-      G.busy = true;
-      render();
-      await performAttack(1, attacker, target);
+    if (m.type === 'combatDeclare') {
+      const ok = await declareAttack(1, { lanes: m.lanes || [] });
       if (!G || G.gen !== gen) return;
-      if (!G.over) G.busy = false;
-      render();
+      if (!ok) resync();
+      return;   // advanceCombat handles the hand-off from here
+    }
+
+    if (m.type === 'combatBlocks') {
+      const ok = await commitBlocks(1, { blocks: m.blocks || [] });
+      if (!G || G.gen !== gen) return;
+      if (!ok) resync();
       return;
+    }
+
+    if (m.type === 'combatAttackerCast') {
+      const ok = await commitAttackerCast(1, { quicks: m.quicks || [] });
+      if (!G || G.gen !== gen) return;
+      if (!ok) resync();
+      return;
+    }
+
+    if (m.type === 'combatDefenderCast') {
+      const ok = await commitDefenderCast(1, { quicks: m.quicks || [] });
+      if (!G || G.gen !== gen) return;
+      if (!ok) resync();
+      return;   // commitDefenderCast runs the full resolution
     }
   }
 
@@ -754,8 +981,13 @@ const NET = (() => {
     guardLeave,
     startMatch,
     playCard,
-    sendAttack,
     sendEndTurn,
+    sendSurrender,
+    sendEmote,
+    sendCombatDeclare,
+    sendCombatBlocks,
+    sendCombatAttackerCast,
+    sendCombatDefenderCast,
     requestRematch,
     onRender,
   };

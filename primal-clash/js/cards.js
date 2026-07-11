@@ -14,12 +14,12 @@ const TRIBE_ICONS = {
   Aquatic: '🌊',
   Arthropod: '🦂',
   Reptile: '🦖',
-  Bird: '🦅',
   Mammal: '🐘',
 };
 
 const KEYWORD_ICONS = {
-  taunt: '🛡️',
+  stalker: '🐾',
+  overwhelm: '💥',
   venom: '☠️',
   stealth: '🌫️',
   swift: '⚡',
@@ -28,18 +28,25 @@ const KEYWORD_ICONS = {
   evasive: '💨',
   fearless: '😤',
   devour: '🍖',
+  breacher: '🪓',
+  energetic: '🔋',
+  berserk: '💢',
 };
 
 const KEYWORD_HELP = {
-  taunt: 'Taunt: enemies must attack this creature before the leader or other creatures (Stealth attackers may ignore it).',
+  stalker: 'Stalker: when declared as an attacker, you choose which enemy creature blocks it — that creature is dragged into the lane and cannot be pulled away. (Stealthed creatures can\'t be chosen.)',
+  overwhelm: "Overwhelm: when this creature kills its blocker, damage beyond the blocker's HP is dealt to the enemy leader.",
   venom: 'Venom: any nonzero combat damage this creature deals or receives destroys the other creature outright.',
-  stealth: "Stealth: can't be targeted by attacks or targeted event cards until it attacks for the first time.",
-  swift: 'Swift: can attack the same turn it is played.',
+  stealth: "Stealth: can't be targeted by events or Stalker, and can't be blocked. Breaks when it attacks or blocks.",
+  swift: 'Swift: can attack the same turn it is played (anything may still block it).',
   regenerate: 'Regenerate: heals 1 HP at the start of its owner\'s turn if damaged.',
   frenzy: 'Frenzy: gains +2 ATK permanently the first time it takes damage.',
   evasive: 'Evasive: takes no counterattack damage when it attacks.',
   fearless: 'Fearless: infinite Morale — this creature never retreats.',
   devour: 'Devour: when this creature kills another creature in combat, it feasts on it, healing HP equal to the victim\'s max HP.',
+  breacher: 'Breacher: its strikes shred armor — a creature it fights permanently loses 1 Armor (2 if this has 4+ ATK).',
+  energetic: 'Energetic: can attack twice per turn — after the first combat, a second attack wave may be declared with Energetic creatures.',
+  berserk: 'Berserk: every time this creature takes damage, it permanently gains +1 ATK.',
 };
 
 /* name / cost / atk / hp / armor / tribe / era / abilities / ability / onSummon
@@ -68,56 +75,95 @@ const CREATURES = [
   defineCreature('Trilobite',          1, 1, 2, 1, 'Aquatic',   'Cambrian'),
   defineCreature('Compsognathus',      1, 2, 1, 0, 'Reptile',   'Jurassic'),
   defineCreature('Hallucigenia',       3, 1, 1, 0, 'Aquatic',   'Cambrian',      [],
-    { id: 'dream_conjurer', text: 'At the start of your turn, dream up a random event costing 3 or less.' }),
+    { id: 'dream_conjurer', text: 'Start of turn: conjure a random event (cost ≤ 3).' }),
   defineCreature('Anomalocaris',       2, 3, 2, 0, 'Aquatic',   'Cambrian',      [], null,
-    { id: 'destroy_trilobite', text: 'Destroy a Trilobite on either side of the field, regardless of its stats.' }),
+    { id: 'destroy_trilobite', text: 'Destroy any Trilobite.' }),
   defineCreature('Meganeura',          2, 2, 1, 0, 'Arthropod', 'Carboniferous', ['evasive']),
   defineCreature('Velociraptor',       2, 3, 1, 0, 'Reptile',   'Cretaceous',    ['swift']),
   defineCreature('Dire Wolf',          2, 2, 3, 0, 'Mammal',    'Pleistocene', [],
-    { id: 'pack_hunter', text: 'For each other Dire Wolf on the playing field, this creature gains +1 ATK.' }),
+    { id: 'pack_hunter', text: '+1 ATK for each other Dire Wolf in play.' }),
   defineCreature('Sea Scorpion',       3, 3, 3, 0, 'Aquatic',   'Silurian'),
+  defineCreature('Ichthyosaurus',      3, 4, 2, 0, 'Aquatic',   'Jurassic'),
   defineCreature('Pulmonoscorpius',    3, 2, 2, 0, 'Arthropod', 'Carboniferous', ['venom']),
-  defineCreature('Dimetrodon',         3, 3, 4, 0, 'Reptile',   'Permian'),
+  defineCreature('Mongolarachne',      3, 3, 3, 0, 'Arthropod', 'Jurassic'),
+  defineCreature('Dimetrodon',         3, 3, 4, 0, 'Reptile',   'Permian',       ['berserk']),
   defineCreature('Pteranodon',         3, 3, 2, 0, 'Reptile',   'Cretaceous',    ['stealth']),
-  defineCreature('Terror Bird',        3, 4, 2, 0, 'Bird',      'Miocene'),
+  defineCreature('Castoroides',        3, 3, 4, 0, 'Mammal',    'Pleistocene',   ['breacher']),
   defineCreature('Cameroceras',        4, 4, 5, 0, 'Aquatic',   'Ordovician'),
-  defineCreature('Arthropleura',       4, 3, 6, 1, 'Arthropod', 'Carboniferous', ['taunt']),
-  defineCreature('Gorgonops',          4, 5, 3, 0, 'Reptile',   'Permian'),
+  defineCreature('Plesiosaurus',       4, 4, 5, 0, 'Aquatic',   'Jurassic'),
+  defineCreature('Arthropleura',       4, 3, 6, 1, 'Arthropod', 'Carboniferous', ['regenerate']),
+  defineCreature('Brontoscorpio',      4, 4, 3, 0, 'Arthropod', 'Silurian',      [], null,
+    { id: 'sting_execution', text: 'Destroy an enemy creature — its HP recoils as damage to your leader.' }),
+  defineCreature('Meganeuropsis',      4, 3, 2, 0, 'Arthropod', 'Permian',       ['evasive']),
+  defineCreature('Gorgonops',          4, 5, 3, 0, 'Reptile',   'Permian',       ['stalker']),
   defineCreature('Stegosaurus',        4, 3, 5, 1, 'Reptile',   'Jurassic'),
   defineCreature('Smilodon',           4, 5, 3, 0, 'Mammal',    'Pleistocene',   ['stealth']),
+  defineCreature('Megaloceros',        4, 4, 4, 0, 'Mammal',    'Pleistocene',   ['energetic']),
+  defineCreature('Homo Neanderthalensis', 4, 3, 4, 0, 'Mammal', 'Pleistocene'),
   defineCreature('Dunkleosteus',       5, 5, 4, 2, 'Aquatic',   'Devonian'),
-  defineCreature('Ankylosaurus',       5, 2, 7, 2, 'Reptile',   'Cretaceous',    ['taunt']),
+  defineCreature('Tusoteuthis',        5, 5, 5, 0, 'Aquatic',   'Cretaceous'),
+  defineCreature('Ankylosaurus',       5, 2, 7, 2, 'Reptile',   'Cretaceous',    ['fearless']),
   defineCreature('Megatherium',        5, 4, 7, 0, 'Mammal',    'Pleistocene',   ['regenerate']),
   defineCreature('Woolly Rhino',       5, 4, 6, 1, 'Mammal',    'Pleistocene',   ['frenzy']),
-  defineCreature('Triceratops',        6, 5, 7, 1, 'Reptile',   'Cretaceous',    ['taunt']),
-  defineCreature('Spinosaurus',        6, 6, 5, 0, 'Reptile',   'Cretaceous'),
-  defineCreature('Woolly Mammoth',     6, 5, 8, 1, 'Mammal',    'Pleistocene'),
-  defineCreature('Brachiosaurus',      7, 4, 9, 0, 'Reptile',   'Jurassic',      ['taunt']),
+  defineCreature('Gigantopithecus',    5, 4, 6, 0, 'Mammal',    'Pleistocene',   [], null,
+    { id: 'mammal_toss', text: 'Throw a friendly Mammal at an enemy creature — they trade combat damage.' }),
+  defineCreature('Triceratops',        6, 5, 7, 1, 'Reptile',   'Cretaceous',    ['overwhelm']),
+  defineCreature('Spinosaurus',        6, 6, 5, 0, 'Reptile',   'Cretaceous',    [],
+    { id: 'river_king', text: 'River King: counts as Aquatic too. While a biome is active: +2 ATK and Regenerate.' }),
+  defineCreature('Woolly Mammoth',     6, 5, 8, 1, 'Mammal',    'Pleistocene',   ['overwhelm']),
+  defineCreature('Brachiosaurus',      7, 4, 9, 0, 'Reptile',   'Jurassic',      ['fearless']),
   defineCreature('Mosasaurus',         7, 7, 7, 0, 'Aquatic',   'Cretaceous',    [],
-    { id: 'ocean_devour', text: 'Devours any Aquatic creature it kills, healing HP equal to the victim\'s max HP.' }),
+    { id: 'ocean_devour', text: 'Devours Aquatic creatures it kills, healing their max HP.' }),
   defineCreature('Megalodon',          7, 8, 6, 0, 'Aquatic',   'Miocene',       ['fearless']),
-  defineCreature('Tyrannosaurus Rex',  8, 9, 8, 0, 'Reptile',   'Cretaceous',    ['fearless'], null,
+  defineCreature('Tyrannosaurus Rex',  8, 9, 8, 0, 'Reptile',   'Cretaceous',    ['fearless', 'overwhelm'], null,
     { id: 'terrify', text: 'Reduce all enemy Morale by 2.' }),
 ];
 
+/* `quick: true` events can be cast in your main phase AND queued during
+   combat (attacker's cast window after declaring, defender's after
+   blocking). They stay hidden until both players lock in. */
 const EVENTS = [
-  { id: 'predator_ambush',   type: 'event', name: 'Predator Ambush',   cost: 1, effect: 'ambush',   icon: '🗡️', text: 'Deal 2 damage to an enemy creature.' },
+  { id: 'predator_ambush',   type: 'event', name: 'Predator Ambush',   cost: 1, effect: 'ambush',   quick: true,  icon: '🗡️', text: 'Deal 2 damage to an enemy creature.' },
+  { id: 'adrenaline_surge',  type: 'event', name: 'Adrenaline Surge',  cost: 1, effect: 'surge',    quick: true,  icon: '🩸', text: 'A friendly creature gets +2 ATK this turn.' },
+  { id: 'bone_plating',      type: 'event', name: 'Bone Plating',      cost: 1, effect: 'plating',  quick: true,  icon: '🦴', text: 'A friendly creature gets +2 Armor this turn.' },
+  { id: 'trampling_fury',    type: 'event', name: 'Trampling Fury',    cost: 2, effect: 'trample',  quick: true,  icon: '🐘', text: 'A friendly creature gains Overwhelm this turn.' },
+  { id: 'rallying_cry',      type: 'event', name: 'Rallying Cry',      cost: 2, effect: 'rally',    quick: true,  icon: '📯', text: 'Restore 2 Morale to all your creatures.' },
+  { id: 'primal_screech',    type: 'event', name: 'Primal Screech',   cost: 3, effect: 'screech',  quick: true,  icon: '📢', text: 'Deal 1 damage to every creature in combat.' },
+  { id: 'eruption',          type: 'event', name: 'Eruption',          cost: 4, effect: 'eruption', quick: true,  icon: '🌋', text: 'Deal 4 damage to any creature.' },
+  { id: 'sunder',            type: 'event', name: 'Sunder',            cost: 1, effect: 'sunder',   quick: true,  icon: '⚒️', text: 'Break 3 Armor on an enemy creature.' },
+  { id: 'primal_mending',    type: 'event', name: 'Primal Mending',    cost: 2, effect: 'mend',     quick: true,  icon: '🩹', text: 'Heal a creature 4 HP.' },
   { id: 'fossil_excavation', type: 'event', name: 'Fossil Excavation', cost: 2, effect: 'excavate', icon: '⛏️', text: 'Draw 2 cards.' },
-  { id: 'evolve',            type: 'event', name: 'Evolve',            cost: 2, effect: 'evolve',   icon: '🧬', text: 'Give a friendly creature +2/+2 permanently.' },
+  { id: 'evolve',            type: 'event', name: 'Evolve',            cost: 2, effect: 'evolve',   icon: '🧬', text: 'A friendly creature gains +2/+2.' },
   { id: 'healing_spring',    type: 'event', name: 'Healing Spring',    cost: 2, effect: 'spring',   icon: '💧', text: 'Restore 5 HP to your leader.' },
-  { id: 'tar_pit',           type: 'event', name: 'Tar Pit',           cost: 3, effect: 'tarpit',   icon: '🕳️', text: 'Destroy an enemy creature with 3 or less current attack.' },
-  { id: 'eruption',          type: 'event', name: 'Eruption',          cost: 4, effect: 'eruption', icon: '🌋', text: 'Deal 4 damage to any one creature.' },
-  { id: 'ice_age',           type: 'event', name: 'Ice Age',           cost: 5, effect: 'iceage',   icon: '❄️', text: "Freeze all enemy creatures — they can't attack next turn." },
-  { id: 'meteor_impact',     type: 'event', name: 'Meteor Impact',     cost: 6, effect: 'meteor',   icon: '☄️', text: 'Deal 3 damage to ALL creatures on the board.' },
-  { id: 'rallying_cry',      type: 'event', name: 'Rallying Cry',      cost: 2, effect: 'rally',    icon: '📯', text: 'Restore 2 Morale to all your creatures.' },
+  { id: 'healing_rain',      type: 'event', name: 'Healing Rain',      cost: 3, effect: 'rain',     icon: '🌧️', text: 'Heal all your creatures 2 HP.' },
+  { id: 'tar_pit',           type: 'event', name: 'Tar Pit',           cost: 3, effect: 'tarpit',   icon: '🕳️', text: 'Destroy an enemy creature with 4 or less ATK.' },
+  { id: 'ice_age',           type: 'event', name: 'Ice Age',           cost: 5, effect: 'iceage',   icon: '❄️', text: 'Freeze all enemy creatures for a turn.' },
+  { id: 'meteor_impact',     type: 'event', name: 'Meteor Impact',     cost: 6, effect: 'meteor',   icon: '☄️', text: 'Deal 3 damage to all creatures.' },
+  { id: 'continental_drift', type: 'event', name: 'Continental Drift', cost: 1, effect: 'drift',    icon: '🌍', text: 'Destroy the active biome.' },
 ];
 
+/* Biome mechanics (logic lives in game.js/combat.js):
+   `buffTribe`    — that tribe gets +1 ATK while the biome is up (aura).
+   `buffHp`       — that same tribe also gets +N HP (applied/removed as the
+                    biome enters/leaves; new summons get it on entry).
+   `grantSwift`   — that tribe loses summoning sickness (on play + on entry).
+   `deathSpawn`   — { tribe, token }: when a creature of `tribe` dies, the
+                    token creature (from TOKENS) is summoned in its place.
+   `freezeOthers` — creatures NOT of that tribe enter play frozen for a
+                    full round (Deep Freeze).
+   `burn`         — every creature takes N damage at the end of each turn. */
 const BIOMES = [
-  { id: 'panthalassa_ocean',    type: 'biome', name: 'Panthalassa Ocean',    cost: 2, buffTribe: 'Aquatic',   burn: 0, icon: '🌊', text: 'Aquatic creatures get +1 ATK.' },
-  { id: 'carboniferous_jungle', type: 'biome', name: 'Carboniferous Jungle', cost: 2, buffTribe: 'Arthropod', burn: 0, icon: '🌿', text: 'Arthropod creatures get +1 ATK.' },
-  { id: 'fern_prairie',         type: 'biome', name: 'Fern Prairie',         cost: 2, buffTribe: 'Reptile',   burn: 0, icon: '🌾', text: 'Reptile creatures get +1 ATK.' },
-  { id: 'glacial_tundra',       type: 'biome', name: 'Glacial Tundra',       cost: 2, buffTribe: 'Mammal',    burn: 0, icon: '🏔️', text: 'Mammal creatures get +1 ATK.' },
-  { id: 'volcanic_wastes',      type: 'biome', name: 'Volcanic Wastes',      cost: 3, buffTribe: null,        burn: 1, icon: '🔥', text: 'All creatures take 1 damage at the end of every turn (bypasses armor).' },
+  { id: 'panthalassa_ocean',    type: 'biome', name: 'Panthalassa Ocean',    cost: 4, grantSwift: 'Aquatic', burn: 0, icon: '🌊', text: 'Aquatic creatures have Swift.' },
+  { id: 'carboniferous_jungle', type: 'biome', name: 'Carboniferous Jungle', cost: 4, deathSpawn: { tribe: 'Arthropod', token: 'archimylacris' }, burn: 0, icon: '🌿', text: 'When an Arthropod dies, a 1/1 Archimylacris takes its place.' },
+  { id: 'fern_prairie',         type: 'biome', name: 'Fern Prairie',         cost: 3, buffTribe: 'Reptile', buffHp: 1, burn: 0, icon: '🌾', text: 'Reptile creatures get +1/+1.' },
+  { id: 'glacial_tundra',       type: 'biome', name: 'Glacial Tundra',       cost: 5, freezeOthers: 'Mammal', burn: 0, icon: '🏔️', text: 'Non-Mammals enter play frozen for a round.' },
+  { id: 'volcanic_wastes',      type: 'biome', name: 'Volcanic Wastes',      cost: 6, burn: 1, icon: '🔥', text: 'All creatures take 1 damage each turn (ignores Armor).' },
+];
+
+/* Token creatures: summoned by effects, deliberately NOT in CARD_POOL —
+   they can never be drafted, deck-built, or drawn. */
+const TOKENS = [
+  defineCreature('Archimylacris', 1, 1, 1, 0, 'Arthropod', 'Carboniferous'),
 ];
 
 const CARD_POOL = [...CREATURES, ...EVENTS, ...BIOMES];

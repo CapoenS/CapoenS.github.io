@@ -71,24 +71,254 @@ button:disabled { opacity: .45; cursor: default; }
 #battlefield {
   grid-area: field;
   display: flex;
-  flex-direction: column;
-  padding: 6px 10px;
-  gap: 4px;
+  flex-direction: row;
+  align-items: stretch;
+  padding: 6px 92px 6px 8px;   /* right room for amber/deck; panels are a flow column */
+  gap: 8px;
   min-height: 0;
 }
-.hero-row { display: flex; align-items: center; justify-content: center; gap: 18px; }
+
+/* left-edge player panels (a real flex column, robust to responsive padding) */
+#side-panels {
+  flex: 0 0 112px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 6px 0;
+  min-width: 0;
+}
+
+/* the 4 board rows + biome divider, stacked */
+#field-stack {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  isolation: isolate;   /* keeps the z-index:-1 biome art inside the stack */
+}
+
+/* ---------- biome field art ----------
+   One wide ground image per biome, painted behind the board rows:
+   ::after = your half (as authored), ::before = enemy half (mirrored
+   vertically so the arena stays symmetric about the biome banner).
+   renderBiome() stamps data-biome on #field-stack and toggles .biome-art
+   (only for biomes listed in BIOME_FIELD_ART, ui.js); biomes without art
+   keep the plain table. Opacity transition gives a soft fade on spawn
+   and on Continental Drift.
+
+   Adding art for another biome = drop the image in assets/biomes/, add
+   the id to BIOME_FIELD_ART, and write one block like the glacial_tundra
+   one below (image + the four --biome-* theme colors). */
+#field-stack::before,
+#field-stack::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: -1;
+  border-radius: 12px;
+  /* thick biome-tinted frame: each half ends hard at the banner, and the
+     frame keeps the two from blending into one another */
+  border: 5px solid var(--biome-edge, transparent);
+  background-size: cover;
+  background-position: center;
+  background-origin: border-box;   /* art reaches under the frame — no dark gap */
+  opacity: 0;
+  transition: opacity .9s ease;
+  pointer-events: none;
+}
+/* Halves stop short of the banner: positionBiomeArt() (ui.js) measures
+   the banner's edges, and --biome-gap pulls each half back further so an
+   art-free band of plain table surrounds the label — the two images
+   never touch. */
+#field-stack::before { top: 0;    height: calc(var(--biome-split-top, 50%) - var(--biome-gap, 22px)); transform: scaleY(-1); }
+#field-stack::after  { bottom: 0; height: calc(var(--biome-split-bottom, 50%) - var(--biome-gap, 22px)); }
+
+/* While field art is up, the summon rows drop their brown fill and keep a
+   crisper outline instead, so the ground art shows through untinted. */
+#field-stack.biome-art .field-row {
+  background: transparent;
+  border: 2px dashed var(--biome-line, rgba(255,255,255,.3));
+}
+/* ...and the banner trades its amber dress for the biome's colors. It is
+   the filled strip between the two art halves, so it gets a solid base. */
+#field-stack.biome-art #biome-banner {
+  color: var(--text);
+  border-color: var(--biome-accent, var(--amber-dim));
+  background-color: var(--biome-banner-base, #10161f);
+  background-image: var(--biome-banner-bg, none);
+}
+
+#field-stack[data-biome="glacial_tundra"] {
+  --biome-edge: #8fbede;
+  --biome-line: rgba(190,225,255,.45);
+  --biome-accent: rgba(170,220,255,.65);
+  --biome-banner-base: #182b3a;
+  --biome-banner-bg: linear-gradient(90deg, rgba(90,170,225,.35), rgba(90,170,225,.12), rgba(90,170,225,.35));
+}
+#field-stack[data-biome="glacial_tundra"]::before,
+#field-stack[data-biome="glacial_tundra"]::after {
+  /* dark wash keeps cards and white text readable on the bright ice */
+  background-image: linear-gradient(rgba(7,13,22,.42), rgba(7,13,22,.42)),
+                    url('../assets/biomes/glacial_tundra.jpg');
+  opacity: 1;
+}
+
+#field-stack[data-biome="carboniferous_jungle"] {
+  --biome-edge: #5e8a3a;
+  --biome-line: rgba(170,215,110,.4);
+  --biome-accent: rgba(150,205,100,.6);
+  --biome-banner-base: #17240e;
+  --biome-banner-bg: linear-gradient(90deg, rgba(95,160,55,.35), rgba(95,160,55,.12), rgba(95,160,55,.35));
+}
+#field-stack[data-biome="carboniferous_jungle"]::before,
+#field-stack[data-biome="carboniferous_jungle"]::after {
+  background-image: linear-gradient(rgba(6,12,5,.30), rgba(6,12,5,.30)),
+                    url('../assets/biomes/carboniferous_jungle.jpg');
+  opacity: 1;
+}
+
+#field-stack[data-biome="fern_prairie"] {
+  --biome-edge: #a4b344;
+  --biome-line: rgba(220,235,145,.42);
+  --biome-accent: rgba(215,230,135,.6);
+  --biome-banner-base: #23260c;
+  --biome-banner-bg: linear-gradient(90deg, rgba(165,180,55,.32), rgba(165,180,55,.10), rgba(165,180,55,.32));
+}
+#field-stack[data-biome="fern_prairie"]::before,
+#field-stack[data-biome="fern_prairie"]::after {
+  /* the prairie is the brightest arena — wash it a touch harder */
+  background-image: linear-gradient(rgba(10,12,4,.38), rgba(10,12,4,.38)),
+                    url('../assets/biomes/fern_prairie.jpg');
+  opacity: 1;
+}
+
+#field-stack[data-biome="panthalassa_ocean"] {
+  --biome-edge: #3e82a4;
+  --biome-line: rgba(130,205,235,.42);
+  --biome-accent: rgba(120,200,235,.6);
+  --biome-banner-base: #0b202d;
+  --biome-banner-bg: linear-gradient(90deg, rgba(50,140,195,.35), rgba(50,140,195,.12), rgba(50,140,195,.35));
+}
+#field-stack[data-biome="panthalassa_ocean"]::before,
+#field-stack[data-biome="panthalassa_ocean"]::after {
+  background-image: linear-gradient(rgba(4,12,20,.35), rgba(4,12,20,.35)),
+                    url('../assets/biomes/panthalassa_ocean.jpg');
+  opacity: 1;
+}
+
+#field-stack[data-biome="volcanic_wastes"] {
+  --biome-edge: #944020;
+  --biome-line: rgba(255,150,80,.35);
+  --biome-accent: rgba(255,150,80,.6);
+  --biome-banner-base: #260f08;
+  --biome-banner-bg: linear-gradient(90deg, rgba(205,85,30,.35), rgba(205,85,30,.12), rgba(205,85,30,.35));
+}
+#field-stack[data-biome="volcanic_wastes"]::before,
+#field-stack[data-biome="volcanic_wastes"]::after {
+  /* already near-black — the lightest wash of the set */
+  background-image: linear-gradient(rgba(0,0,0,.15), rgba(0,0,0,.15)),
+                    url('../assets/biomes/volcanic_wastes.jpg');
+  opacity: 1;
+}
+
+/* opponent's hand: a compact fan of face-down card backs at the very top */
+.enemy-hand {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  height: 46px;
+  gap: 0;
+}
+.card-back {
+  width: 32px;
+  height: 44px;
+  border-radius: 5px;
+  background: linear-gradient(160deg, #241a10, #0c0804);
+  border: 1px solid #4a3826;
+  box-shadow: 0 2px 5px rgba(0,0,0,.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: rotate(var(--cb-r, 0deg));
+  transform-origin: bottom center;
+  flex: 0 0 auto;
+}
+.card-back-mark { color: var(--amber-dim); font-weight: 800; font-size: 18px; opacity: .8; }
+
 .board {
-  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  min-height: 118px;
   border-radius: 12px;
-  background: rgba(0,0,0,.18);
-  border: 1px dashed rgba(255,255,255,.07);
   padding: 4px;
 }
+/* field rows: where creatures live (summon zone) */
+.field-row {
+  flex: 1 1 0;
+  min-height: 122px;
+  background: rgba(0,0,0,.18);
+  border: 1px dashed rgba(255,255,255,.07);
+}
+/* battle rows: 7 aligned lane columns, collapsed until combat.
+   `.board.battle-row` (two classes) outranks the later `.board`
+   min-height floor so idle battle rows really do collapse.
+   Equal 1fr columns always fit the row width and align by index
+   between the two battle rows; creatures are constrained to fit. */
+.board.battle-row {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-auto-rows: 1fr;          /* the single row fills the row's definite height */
+  justify-items: center;
+  align-items: stretch;
+  gap: 6px;
+  min-height: 6px;
+  height: 6px;
+  flex: 0 0 auto;
+  padding: 0;
+  overflow: hidden;             /* never let a card spill into the neighbouring row */
+  transition: min-height .18s ease, height .18s ease;
+}
+.board.battle-row.active-combat {
+  min-height: 118px;
+  height: 118px;
+  padding: 2px;
+  background: rgba(120,20,20,.10);
+  border: 1px solid rgba(255,90,60,.16);
+}
+.lane-slot {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+}
+/* Battle creatures fit their lane: capped to the row height, width follows. */
+.battle-row .creature {
+  height: 100%;
+  max-height: 100%;
+  width: auto;
+  max-width: 100%;
+}
+.battle-row.active-combat .lane-slot.empty {
+  border: 2px dashed rgba(255,255,255,.08);
+  border-radius: 10px;
+}
+.lane-slot.blockable {
+  border-color: rgba(126,224,129,.55);
+  background: rgba(126,224,129,.08);
+  cursor: pointer;
+}
+.lane-slot .lane-hint { font-size: 26px; opacity: .5; }
+.lane-slot.drag-over { border-color: var(--amber); background: rgba(255,179,0,.12); }
+.board.drop-ready { outline: 2px dashed rgba(126,224,129,.55); outline-offset: -3px; }
 
 #biome-banner {
   text-align: center;
@@ -106,39 +336,142 @@ button:disabled { opacity: .45; cursor: default; }
 }
 .biome-icon { font-size: 16px; }
 
-/* ---------- hero panels ---------- */
-.hero {
+/* ---------- left-edge player panels ---------- */
+.side-panel {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 3px;
   background: var(--panel);
   border: 2px solid var(--panel-edge);
   border-radius: 14px;
-  padding: 6px 16px;
-  min-width: 300px;
+  padding: 10px 6px;
   position: relative;
-  transition: box-shadow .2s;
+  transition: box-shadow .2s, border-color .2s;
+  pointer-events: auto;
 }
-.hero.active-turn { box-shadow: 0 0 12px rgba(255,179,0,.35); border-color: var(--amber-dim); }
-.portrait {
-  font-size: 32px;
-  width: 54px; height: 54px;
+.side-panel.active-turn { box-shadow: 0 0 14px rgba(255,179,0,.4); border-color: var(--amber-dim); }
+.side-panel.attacking { border-color: #b3402c; }
+.side-panel.defending { border-color: #3f7a3f; }
+/* the side we're waiting on gets a strong pulsing glow so it's unmistakable */
+.side-panel.to-act { animation: panel-pulse 1.3s ease-in-out infinite; }
+.side-panel.to-act.active-turn { box-shadow: 0 0 18px 3px rgba(255,179,0,.55); }
+.side-panel.to-act.attacking  { box-shadow: 0 0 18px 3px rgba(255,90,60,.55); }
+.side-panel.to-act.defending  { box-shadow: 0 0 18px 3px rgba(126,224,129,.6); }
+@keyframes panel-pulse { 50% { filter: brightness(1.25); } }
+.sp-turn {
+  font-size: 10px; font-weight: 800; letter-spacing: .3px;
+  text-transform: uppercase;
+  min-height: 13px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.side-panel.active-turn .sp-turn { color: var(--amber); }
+.side-panel.attacking .sp-turn { color: #ff8a72; }
+.side-panel.defending .sp-turn { color: #8fe093; }
+.side-panel .portrait {
+  font-size: 30px;
+  width: 52px; height: 52px;
   display: flex; align-items: center; justify-content: center;
   background: #1d150c;
   border-radius: 50%;
   border: 2px solid var(--panel-edge);
-  flex: 0 0 54px;
+  flex: 0 0 52px;
 }
-.hero-info { display: flex; flex-direction: column; gap: 1px; }
-.hero-name { font-weight: 700; }
-.hero-hp { color: var(--hp); font-weight: 800; font-size: 17px; }
-.hero-hp.low { animation: pulse-red 1s infinite; }
+.sp-name { font-weight: 700; font-size: 13px; text-align: center; line-height: 1.1; }
+.sp-hp { color: var(--hp); font-weight: 800; font-size: 18px; }
+.sp-hp.low { animation: pulse-red 1s infinite; }
 @keyframes pulse-red { 50% { opacity: .55; } }
-.amber-row { letter-spacing: 2px; font-size: 13px; min-height: 16px; }
-.crystal { color: #4a3a22; }
-.crystal.full { color: var(--amber); text-shadow: 0 0 6px rgba(255,179,0,.7); }
-.hero-meta { font-size: 12px; color: var(--muted); }
+.sp-meta { font-size: 11px; color: var(--muted); }
+
+/* ---------- combat controls (bottom-right cluster) ---------- */
+/* targeting arrow overlay (source card → cursor/target) */
+#target-arrow {
+  position: fixed;
+  inset: 0;
+  width: 100vw; height: 100vh;
+  pointer-events: none;
+  z-index: 500;
+  display: none;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.6));
+}
+#target-arrow.active { display: block; }
+
+/* center spell queue — round tokens over the biome divider */
+#spell-queue {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+  gap: 8px;
+  z-index: 8;
+  pointer-events: none;
+}
+#spell-queue.has-spells { display: flex; }
+.spell-token {
+  position: relative;
+  width: 44px; height: 44px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  box-shadow: 0 3px 10px rgba(0,0,0,.6);
+  animation: spell-pop .25s ease-out;
+}
+.spell-token.mine {
+  background: radial-gradient(circle at 50% 35%, #f7c948, #b45309);
+  border: 2px solid #ffe08a;
+}
+.spell-token.hidden {
+  background: radial-gradient(circle at 50% 35%, #3a2d5a, #170f28);
+  border: 2px solid #4a3a6e;
+  color: #b9a8d9;
+}
+.spell-token.pending { outline: 2px dashed rgba(255,255,255,.5); outline-offset: 2px; }
+.spell-token .st-order {
+  position: absolute; top: -6px; left: -6px;
+  width: 17px; height: 17px;
+  border-radius: 50%;
+  background: #1d150c; color: var(--amber);
+  font-size: 10px; font-weight: 800;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--amber-dim);
+}
+@keyframes spell-pop { from { transform: scale(.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+#combat-controls {
+  position: absolute;
+  right: 12px; bottom: 58px;   /* sit above the player amber cluster */
+  display: flex;
+  gap: 8px;
+  z-index: 7;
+}
+#combat-controls .hidden { display: none; }
 #end-turn-btn { font-weight: 700; background: linear-gradient(#7a5a1a, #54400f); border-color: #9c7a2c; }
+#combat-btn { font-weight: 800; background: linear-gradient(#8c3320, #5c2013); border-color: #b3402c; color: #ffe; }
+#combat-cancel-btn { background: linear-gradient(#4a3826, #33261a); }
+
+/* staging highlights on creatures */
+.creature.attacking { box-shadow: 0 0 12px 2px rgba(255,90,60,.55); }
+.creature.blocking { box-shadow: 0 0 12px 2px rgba(126,224,129,.55); }
+.creature.stalker-locked { outline: 2px solid #b3402c; outline-offset: 1px; }
+
+/* a quick event queued for the current combat window */
+.hand-card.staged-quick {
+  opacity: .55;
+  outline: 2px solid var(--amber);
+  outline-offset: -2px;
+  filter: saturate(1.2);
+}
+.hand-card.staged-quick::after {
+  content: '⚡ queued';
+  position: absolute;
+  top: 4px; left: 50%; transform: translateX(-50%);
+  font-size: 10px; font-weight: 700;
+  color: var(--amber);
+  background: rgba(0,0,0,.7);
+  padding: 1px 6px; border-radius: 8px;
+  z-index: 3;
+}
 
 /* ---------- creatures on board: full-art slabs ---------- */
 .creature {
@@ -276,6 +609,184 @@ button:disabled { opacity: .45; cursor: default; }
 
 .hit-flash { animation: hitflash .3s; }
 @keyframes hitflash { 30% { filter: brightness(2.4) saturate(.4); } }
+
+/* ============================================
+   PARTICLES & CINEMATICS (js/animations.js)
+   ============================================ */
+/* the one particle canvas — above the board, below modals */
+#fx-canvas {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 515;
+}
+/* cinematic darkening (meteor, legendary summons) */
+#fx-dim {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 500;
+  transition: opacity .3s ease;
+}
+/* expanding shockwave ring */
+.fx-ring {
+  position: fixed;
+  border-radius: 50%;
+  border: 3px solid;
+  pointer-events: none;
+  z-index: 520;
+  mix-blend-mode: screen;
+  transform: translate(-50%, -50%);
+}
+/* the falling meteor */
+.fx-meteor {
+  position: fixed;
+  left: -22px;
+  top: -22px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 525;
+  background: radial-gradient(circle at 35% 30%, #fff6c8, #ff9d3c 55%, #c62828);
+  box-shadow:
+    0 0 26px 10px rgba(255, 140, 40, .8),
+    26px -40px 44px 14px rgba(255, 150, 60, .3),
+    52px -84px 60px 16px rgba(255, 150, 60, .15);
+}
+/* full-field tint flash (biome sweeps, frost wash) */
+.fx-sweep {
+  position: fixed;
+  pointer-events: none;
+  z-index: 505;
+  border-radius: 12px;
+  opacity: 0;
+}
+/* legendary creature: invisible until its summon cinematic lands it */
+.creature.pre-summon { opacity: 0 !important; }
+
+/* the attack-lunge flight clone: fixed above EVERYTHING so the
+   battle rows' overflow clipping can never swallow the attacker
+   as it crosses into the opposing field */
+.lunge-ghost {
+  position: fixed !important;
+  margin: 0 !important;
+  z-index: 550 !important;
+  pointer-events: none !important;
+  visibility: visible !important;
+}
+
+/* ============================================
+   SANDBOX MODE — conjure panel + cheat bar
+   ============================================ */
+#sandbox-btn { border-color: #6a8f4a; color: #b9e08a; }
+#sandbox-panel {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, .62);
+  z-index: 640;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#sandbox-panel.hidden { display: none; }
+#sandbox-inner {
+  width: min(880px, 94vw);
+  max-height: 86vh;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--panel);
+  border: 2px solid #6a8f4a;
+  border-radius: 14px;
+  padding: 12px 14px;
+  box-shadow: 0 22px 60px rgba(0, 0, 0, .6);
+}
+.sb-head { display: flex; flex-wrap: wrap; gap: 7px; align-items: center; }
+.sb-head h3 { color: #b9e08a; margin-right: 4px; letter-spacing: 1px; }
+.sb-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; }
+.sb-head button { font-size: 12.5px; padding: 5px 10px; }
+#sb-search {
+  flex: 1 1 170px;
+  min-width: 150px;
+  font: inherit;
+  font-size: 12.5px;
+  padding: 6px 12px;
+  background: #241a10;
+  border: 1px solid var(--panel-edge);
+  border-radius: 16px;
+  color: var(--text);
+}
+#sb-search:focus { outline: 2px solid #6a8f4a; }
+#sb-msg { font-size: 12px; color: var(--good); min-height: 15px; }
+#sb-cards {
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+  gap: 9px;
+  padding: 4px 4px 8px;
+}
+.sb-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 7px 5px 6px;
+  background: #241a10;
+  border: 1px solid var(--panel-edge);
+  border-radius: 10px;
+  cursor: pointer;
+  color: var(--text);
+  font: inherit;
+}
+.sb-card:hover {
+  border-color: #b9e08a;
+  box-shadow: 0 0 10px rgba(155, 210, 110, .4);
+  transform: translateY(-2px);
+}
+.sb-art {
+  position: relative;
+  width: 100%;
+  height: 58px;
+  border-radius: 7px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, .32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+}
+.sb-name { font-size: 10.5px; line-height: 1.15; text-align: center; }
+.sb-cost {
+  position: absolute;
+  top: -6px;
+  left: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffd54f, #b8860b);
+  color: #241a10;
+  font-weight: 900;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+/* white shockwave pop at an impact point (spawned by FX.impact) */
+.fx-pop {
+  position: fixed;
+  width: 70px; height: 70px;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 520;
+  mix-blend-mode: screen;
+  background: radial-gradient(circle, rgba(255,255,255,.95), rgba(255,222,150,.55) 42%, transparent 70%);
+}
 
 .shake { animation: shake .4s; }
 @keyframes shake {
@@ -554,12 +1065,11 @@ button:disabled { opacity: .45; cursor: default; }
    Keywords:  distinctive animated frames
    ============================================ */
 
-/* ---------- richer creature base ---------- */
+/* ---------- richer creature base (no top "spotlight" sheen — it made
+   the whole card look washed out, especially scaled up in the modal) */
 .hand-card {
-  background:
-    radial-gradient(120% 70% at 50% 0%, rgba(255,255,255,.07), transparent 60%),
-    linear-gradient(160deg, #3d2d1c, #241a10 55%, #2c2014);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.08), inset 0 -8px 16px rgba(0,0,0,.35), 0 4px 10px rgba(0,0,0,.45);
+  background: linear-gradient(160deg, #3d2d1c, #241a10 55%, #2c2014);
+  box-shadow: inset 0 -8px 16px rgba(0,0,0,.35), 0 4px 10px rgba(0,0,0,.45);
   touch-action: none;
 }
 .hand-card.playable { cursor: grab; }
@@ -578,7 +1088,7 @@ button:disabled { opacity: .45; cursor: default; }
   inset: 0;
   border-radius: inherit;
   background: linear-gradient(180deg, var(--tribe, #6d5b41) 0%, transparent 96%);
-  opacity: .34;
+  opacity: .22;   /* soft tribe tint — stronger washed the card out */
   z-index: -1;
   pointer-events: none;
 }
@@ -628,7 +1138,24 @@ button:disabled { opacity: .45; cursor: default; }
 .hand-card.ctype-event > *, .db-card.ctype-event > * { position: relative; z-index: 1; }
 .hand-card.ctype-event .cost { top: 8px; left: 12px; }
 .hand-card.ctype-event .card-name { color: #d8c5ff; text-shadow: 0 0 8px rgba(176,127,255,.6); }
-.hand-card.ctype-event .card-text { color: #b9a8d9; }
+/* card-text sits on the parchment box → dark ink, not the shard's purple */
+.hand-card.ctype-event .card-text { color: #2a2015; }
+
+/* Quick events: same arcane shard, but a hotter crimson-amber energy so
+   they read as "fast" at a glance and stand apart from slow purple events. */
+.hand-card.quick-event, .db-card.quick-event {
+  background: linear-gradient(120deg, #b91c1c, #f59e0b 30%, #fde047 55%, #b91c1c 80%, #f59e0b);
+  background-size: 300% 300%;
+}
+.hand-card.quick-event::before, .db-card.quick-event::before {
+  background:
+    radial-gradient(90% 60% at 50% 8%, rgba(251,191,36,.30), transparent 70%),
+    linear-gradient(165deg, #3a2410, #22140a 60%, #331f0e);
+}
+.hand-card.quick-event .card-name { color: #ffe4a8; text-shadow: 0 0 8px rgba(251,191,36,.6); border-top-color: rgba(251,191,36,.7); }
+.hand-card.quick-event .card-text { color: #2a2015; }   /* ink on parchment */
+.hand-card.quick-event .card-sub { color: #ffcf7a; }
+.card-art.sigil.quick { background: radial-gradient(circle, rgba(251,191,36,.6), rgba(239,68,68,.18) 72%); }
 .db-card.ctype-event .db-head { padding: 2px 12px 0; }
 .card-art.sigil {
   width: 64px; height: 64px;
@@ -676,7 +1203,7 @@ button:disabled { opacity: .45; cursor: default; }
 }
 
 /* ---------- APEX (cost 7+) golden shimmer ---------- */
-.hand-card.apex:not(.kw-taunt):not(.kw-venom):not(.kw-stealth):not(.kw-swift):not(.kw-regenerate):not(.kw-frenzy) {
+.hand-card.apex {
   animation: apex-glow 3s ease-in-out infinite;
 }
 .hand-card.apex .card-name { color: var(--amber); text-shadow: 0 0 8px rgba(255,179,0,.55); }
@@ -685,101 +1212,123 @@ button:disabled { opacity: .45; cursor: default; }
   50%      { box-shadow: 0 0 0 2px rgba(255,213,79,.95), 0 0 30px rgba(255,213,79,.55), inset 0 1px 0 rgba(255,255,255,.08); }
 }
 
-/* ---------- KEYWORD frames ---------- */
-/* Taunt — stone bulwark: heavy double wall */
-:is(.hand-card, .creature, .db-card).kw-taunt {
-  border: 4px double #b8c4cc;
-  box-shadow: 0 0 0 2px #55636d, inset 0 0 14px rgba(0,0,0,.55), 0 4px 10px rgba(0,0,0,.45);
-}
-/* Venom — toxic pulse */
-:is(.hand-card, .creature, .db-card).kw-venom {
-  border-color: #39d353;
-  animation: venom-pulse 2.2s ease-in-out infinite;
-}
-/* Stealth — misty dashed silver */
-:is(.hand-card, .creature, .db-card).kw-stealth {
-  border-style: dashed;
-  border-color: #8ea6c9;
-  box-shadow: 0 0 10px rgba(142,166,201,.35), inset 0 0 18px rgba(37,50,74,.55);
-}
-/* Swift — crackling lightning */
-:is(.hand-card, .creature, .db-card).kw-swift {
-  border-color: #ffd54f;
-  animation: swift-crackle 1.4s steps(2, jump-none) infinite;
-}
-/* Regenerate — breathing life-glow */
-:is(.hand-card, .creature, .db-card).kw-regenerate {
-  border-color: #7ee081;
-  animation: regen-breathe 3s ease-in-out infinite;
-}
-/* Frenzy — flickering embers */
-:is(.hand-card, .creature, .db-card).kw-frenzy {
-  border-color: #ff7043;
-  animation: frenzy-flicker 1.8s ease-in-out infinite;
-}
-/* Evasive — drifting gusts of wind */
-:is(.hand-card, .creature, .db-card).kw-evasive {
-  border-style: dotted;
-  border-color: #8fe3e8;
-  animation: evasive-drift 2.6s ease-in-out infinite;
-}
-@keyframes evasive-drift {
-  0%, 100% { box-shadow: 0 0 8px rgba(143,227,232,.3), inset 0 0 10px rgba(143,227,232,.08); }
-  50%      { box-shadow: 7px 0 16px rgba(143,227,232,.55), -7px 0 16px rgba(143,227,232,.55), inset 0 0 16px rgba(143,227,232,.16); }
-}
-.creature.kw-frenzy.enraged {
-  border-color: #ff3d00;
-  animation-duration: .6s;
-}
-@keyframes venom-pulse {
-  0%, 100% { box-shadow: 0 0 10px rgba(57,211,83,.35), inset 0 0 12px rgba(57,211,83,.12); }
-  50%      { box-shadow: 0 0 22px rgba(57,211,83,.75), inset 0 0 20px rgba(57,211,83,.3); }
-}
-@keyframes regen-breathe {
-  0%, 100% { box-shadow: 0 0 6px rgba(126,224,129,.25); }
-  50%      { box-shadow: 0 0 18px rgba(126,224,129,.6), inset 0 0 12px rgba(126,224,129,.15); }
-}
-@keyframes swift-crackle {
-  0%, 100% { box-shadow: 0 0 8px rgba(255,213,79,.35); }
-  50%      { box-shadow: 0 0 16px rgba(255,213,79,.75), 0 0 4px rgba(255,255,255,.6); }
-}
-@keyframes frenzy-flicker {
-  0%, 100% { box-shadow: 0 0 10px rgba(255,112,67,.35), inset 0 -8px 14px rgba(255,112,67,.12); }
-  30%      { box-shadow: 0 0 18px rgba(255,112,67,.7),  inset 0 -12px 20px rgba(255,112,67,.25); }
-  60%      { box-shadow: 0 0 10px rgba(255,112,67,.35), inset 0 -8px 14px rgba(255,112,67,.12); }
-  80%      { box-shadow: 0 0 20px rgba(255,61,0,.75),   inset 0 -12px 22px rgba(255,112,67,.28); }
-}
+/* ---------- KEYWORD frames removed ----------
+   Cards no longer wear a per-keyword border/glow/animation — only the
+   emblem badge below marks each keyword. What a keyword does is explained
+   by the underlined term + hover popover (see .kw-term / #kw-popover). */
 
-/* keyword emblems (badge riding the top edge) */
-:is(.hand-card, .creature, .db-card):is(.kw-taunt, .kw-venom, .kw-stealth, .kw-swift, .kw-regenerate, .kw-frenzy, .kw-evasive, .kw-fearless, .kw-devour)::after {
+/* keyword emblems — a centered row of badges riding the top edge, one per
+   keyword (real elements, so 2+ skills line up instead of overlapping). */
+.kw-emblems {
   position: absolute;
   top: -11px;
   left: 50%;
   transform: translateX(-50%);
+  display: flex;
+  gap: 3px;
+  z-index: 3;
+  pointer-events: none;
+}
+.kw-emblem {
   width: 24px; height: 24px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 12px;
-  z-index: 3;
-  border: 2px solid;
+  border: 2px solid #6a5320;
   background: #241a10;
   box-shadow: 0 2px 6px rgba(0,0,0,.5);
-  pointer-events: none;
 }
-.kw-taunt::after      { content: '🛡️'; border-color: #9aa7b0; background: #3d4a52; }
-.kw-venom::after      { content: '☠️'; border-color: #39d353; background: #123a1c; }
-.kw-stealth::after    { content: '🌫️'; border-color: #8ea6c9; background: #25324a; }
-.kw-swift::after      { content: '⚡';  border-color: #ffd54f; background: #5a4210; }
-.kw-regenerate::after { content: '💚'; border-color: #7ee081; background: #143a1f; }
-.kw-frenzy::after     { content: '🔥'; border-color: #ff7043; background: #4a1c0f; }
-.kw-evasive::after    { content: '💨'; border-color: #8fe3e8; background: #1d3a44; }
-.creature:is(.kw-taunt, .kw-venom, .kw-stealth, .kw-swift, .kw-regenerate, .kw-frenzy, .kw-evasive, .kw-fearless, .kw-devour)::after,
-.db-card:is(.kw-taunt, .kw-venom, .kw-stealth, .kw-swift, .kw-regenerate, .kw-frenzy, .kw-evasive, .kw-fearless, .kw-devour)::after {
-  width: 20px; height: 20px;
-  font-size: 10px;
-  top: -10px;
+.creature .kw-emblems, .db-card .kw-emblems { top: -10px; gap: 2px; }
+.creature .kw-emblem, .db-card .kw-emblem { width: 20px; height: 20px; font-size: 10px; }
+
+.kw-emblem[data-kw="stalker"]    { border-color: #c8a06a; background: #3a2a16; }
+.kw-emblem[data-kw="overwhelm"]  { border-color: #ff9d3c; background: #4a2a0f; }
+.kw-emblem[data-kw="venom"]      { border-color: #39d353; background: #123a1c; }
+.kw-emblem[data-kw="stealth"]    { border-color: #8ea6c9; background: #25324a; }
+.kw-emblem[data-kw="swift"]      { border-color: #ffd54f; background: #5a4210; }
+.kw-emblem[data-kw="regenerate"] { border-color: #7ee081; background: #143a1f; }
+.kw-emblem[data-kw="frenzy"]     { border-color: #ff7043; background: #4a1c0f; }
+.kw-emblem[data-kw="evasive"]    { border-color: #8fe3e8; background: #1d3a44; }
+.kw-emblem[data-kw="fearless"]   { border-color: #dbeeff; background: #1c3348; }
+.kw-emblem[data-kw="devour"]     { border-color: #d64545; background: #3a0f0f; }
+.kw-emblem[data-kw="breacher"]   { border-color: #c8b08a; background: #3a2d18; }
+.kw-emblem[data-kw="energetic"]  { border-color: #9ccc65; background: #26350f; }
+.kw-emblem[data-kw="berserk"]    { border-color: #ff5252; background: #46100c; }
+
+/* ---------- keyword terms + hover popovers ----------
+   Shared look for the two hover panels: #kw-popover (keyword rules, on a
+   .kw-term) and #card-popover (a field creature's full stats + skills).
+   Keyword mentions (the .kw chip list and keyword words in rule text) are
+   underlined terms, which is what lets card text stay short. */
+.kw-term {
+  text-decoration: underline dotted currentColor;
+  text-underline-offset: 2px;
+  cursor: help;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.creature .kw-term, .hand-card .kw-term, .db-card .kw-term { pointer-events: auto; }
+
+/* Parchment scripture: dark ink on paper, and NO movement — the panel
+   simply appears in place (a fast fade only), so it never feels laggy. */
+.game-popover {
+  position: fixed;
+  z-index: 900;
+  padding: 9px 11px;
+  border-radius: 8px;
+  background:
+    repeating-linear-gradient(3deg, rgba(120,90,40,.05) 0 2px, transparent 2px 5px),
+    linear-gradient(170deg, #f2e7ca, #e6d5ac 60%, #d9c592);
+  border: 2px solid #8a6a34;
+  box-shadow: 0 8px 22px rgba(0,0,0,.55), inset 0 0 14px rgba(120,90,40,.18);
+  color: #2a2015;
+  font-size: 11px;
+  line-height: 1.35;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity .08s ease;
+}
+.game-popover.show { opacity: 1; }
+.game-popover .kw-pop-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 800;
+  color: #6b3f0e;
+  margin-bottom: 3px;
+  text-transform: capitalize;
+}
+.game-popover .kw-term { color: #6b3f0e; }
+#kw-popover { max-width: 240px; }
+
+/* ---------- the BIG CARD modal (hover on a hand card / field creature) ----------
+   The full card face rendered at ~1.6× so it reads like holding the card.
+   .big-wrap reserves the scaled footprint (transform doesn't affect layout).
+   NO panel chrome — the modal is ONLY the card itself. */
+#card-popover {
+  padding: 0;
+  background: none;
+  border: none;
+  box-shadow: none;
+  filter: drop-shadow(0 14px 34px rgba(0,0,0,.65));
+}
+#card-popover .big-wrap {
+  width: calc(var(--hand-card-w, 140px) * 1.6);
+  height: calc(var(--hand-card-h, 204px) * 1.6);
+  position: relative;
+}
+#card-popover .big-card {
+  position: absolute;
+  top: 0; left: 0;
+  width: var(--hand-card-w, 140px);
+  height: var(--hand-card-h, 204px);
+  transform: scale(1.6);
+  transform-origin: top left;
+  pointer-events: none;
+  margin: 0;
+  flex: none;
 }
 
 /* ============================================
@@ -808,6 +1357,9 @@ button:disabled { opacity: .45; cursor: default; }
   background: rgba(255,179,0,.14);
   animation: drop-pulse-amber 1s infinite;
 }
+/* deck-list rows: quick events wear their amber stripe here too */
+.db-row.quick-event { box-shadow: inset 3px 0 0 rgba(251,191,36,.75); }
+.db-row.quick-event .db-row-name { color: #ffcf7a; }
 #battlefield.drop-ready-soft {
   box-shadow: inset 0 0 60px rgba(100,216,255,.14);
   border-radius: 12px;
@@ -1057,7 +1609,6 @@ button:disabled { opacity: .45; cursor: default; }
 .tribe-aquatic   { --tribe: #2e86c1; }  /* ocean blue */
 .tribe-arthropod { --tribe: #96a825; }  /* chitinous yellow-green */
 .tribe-reptile   { --tribe: #2f9e4f; }  /* scale green */
-.tribe-bird      { --tribe: #d4ac2b; }  /* golden plumage */
 .tribe-mammal    { --tribe: #b0713a; }  /* russet fur */
 
 /* ============================================
@@ -1963,6 +2514,26 @@ button:disabled { opacity: .45; cursor: default; }
 /* morale floats are icy blue */
 .float-num.morale { color: #9fd4ff; }
 
+/* ---------- quick-amber bar (3 pips under the amber tray) ---------- */
+.quick-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  margin-top: 4px;
+  font-size: 10px;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.6));
+}
+.qpip {
+  width: 9px; height: 12px;
+  clip-path: polygon(60% 0, 20% 55%, 45% 55%, 40% 100%, 80% 45%, 55% 45%);
+  background: #3a3324;
+}
+.qpip.full {
+  background: linear-gradient(180deg, #fff3b0, #ffd54f 55%, #b8860b);
+  filter: drop-shadow(0 0 3px rgba(255,213,79,.7));
+}
+
 /* retreat: the creature slips away toward its owner, washed out blue */
 .retreating {
   animation: retreat-out .6s ease-in forwards;
@@ -1973,26 +2544,6 @@ button:disabled { opacity: .45; cursor: default; }
   100% { opacity: 0; transform: translateY(74px) scale(.7); filter: saturate(.3) brightness(1.35); }
 }
 
-/* Fearless — icy-white unshakeable gleam */
-:is(.hand-card, .creature, .db-card).kw-fearless {
-  border-color: #dbeeff;
-  animation: fearless-gleam 2.6s ease-in-out infinite;
-}
-@keyframes fearless-gleam {
-  0%, 100% { box-shadow: 0 0 8px rgba(219, 238, 255, .3); }
-  50%      { box-shadow: 0 0 18px rgba(219, 238, 255, .75), inset 0 0 12px rgba(219, 238, 255, .14); }
-}
-.kw-fearless::after { content: '😤'; border-color: #dbeeff; background: #1c3348; }
-/* Devour — hungry crimson pulse */
-:is(.hand-card, .creature, .db-card).kw-devour {
-  border-color: #d64545;
-  animation: devour-hunger 2s ease-in-out infinite;
-}
-@keyframes devour-hunger {
-  0%, 100% { box-shadow: 0 0 8px rgba(214, 69, 69, .3), inset 0 0 10px rgba(120, 20, 20, .25); }
-  50%      { box-shadow: 0 0 18px rgba(214, 69, 69, .7), inset 0 0 16px rgba(120, 20, 20, .4); }
-}
-.kw-devour::after { content: '🍖'; border-color: #d64545; background: #3a0f0f; }
 
 /* ============================================
    ROUND-12 — DECK BUILDER: SECTIONS, SEARCH,
@@ -2145,3 +2696,199 @@ button:disabled { opacity: .45; cursor: default; }
 #save-import-text:focus { outline: 2px solid var(--amber-dim); }
 #save-msg { font-size: 12px; color: var(--good); min-height: 16px; }
 #save-msg.error { color: #ff8a80; }
+
+/* ============================================
+   HEARTHSTONE-STYLE PRESENTATION
+   ============================================ */
+
+/* ---------- board slabs: full-bleed art + stat badges, nothing else ----------
+   (Scoped to #battlefield — the deck builder keeps its labelled cards.) */
+#battlefield .creature .c-art {
+  position: absolute;
+  inset: 0;
+  flex: none;
+  min-height: 0;
+  border-radius: 11px;
+}
+#battlefield .creature .c-art .art-ph {
+  padding-bottom: 0;   /* no name plate to clear anymore — center the emoji */
+}
+/* Morale badge stacks above the ATK blade (bottom-left column). */
+#battlefield .creature .stat-badge.stat-morale {
+  left: -6px;
+  bottom: clamp(22px, calc(var(--board-card-w) / 4.4), 30px);
+  width: clamp(20px, calc(var(--board-card-w) / 5.4), 26px);
+  height: clamp(24px, calc(var(--board-card-w) / 4.6), 30px);
+  font-size: clamp(11px, calc(var(--board-card-w) / 11), 13px);
+}
+
+/* ---------- battle rows: cards keep their FULL size while fighting ---------- */
+.battle-row .creature {
+  height: var(--board-card-h);
+  max-height: none;
+  width: var(--board-card-w);
+  max-width: none;
+}
+.board.battle-row.active-combat {
+  min-height: calc(var(--board-card-h) + 18px);
+  height: auto;
+}
+
+/* ---------- ready to attack: soft red glow ---------- */
+#battlefield .creature.ready {
+  box-shadow: 0 0 14px 3px rgba(255,70,50,.45), 0 0 30px 6px rgba(255,70,50,.18);
+  animation: ready-glow 2.2s ease-in-out infinite;
+}
+@keyframes ready-glow {
+  0%, 100% { box-shadow: 0 0 12px 2px rgba(255,70,50,.38), 0 0 26px 5px rgba(255,70,50,.14); }
+  50%      { box-shadow: 0 0 18px 4px rgba(255,70,50,.6),  0 0 36px 8px rgba(255,70,50,.26); }
+}
+
+/* ---------- paper feel: parchment text boxes on the card face ---------- */
+.hand-card .card-text,
+.hand-card .ability-text {
+  background: linear-gradient(175deg, #efe3c4, #e2d0a4 70%, #d8c290);
+  color: #2a2015;
+  border-radius: 6px;
+  padding: 3px 6px;
+  border: 1px solid rgba(90, 66, 30, .55);
+  box-shadow: inset 0 1px 3px rgba(70, 50, 20, .35), 0 1px 0 rgba(255,255,255,.06);
+  text-shadow: none;
+}
+.hand-card .card-text b, .hand-card .ability-text b { color: #1c1208; }
+.hand-card .card-text .kw-term, .hand-card .ability-text .kw-term { color: #5a3d10; }
+.hand-card.quick-event .card-name { border-top-color: rgba(251,191,36,.7); }
+
+/* ---------- compact skill list (replaces the tribe/era line) ----------
+   One skill per line, small; the big modal adds each rule inline. Same
+   parchment box as the rules field so all text stays DARK INK on paper. */
+.hand-card .kw-list:not(:empty) {
+  flex: 0 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  font-size: 9px;
+  line-height: 1.3;
+  padding: 2px 6px;
+  overflow: hidden;
+  color: #2a2015;
+  background: linear-gradient(175deg, #efe3c4, #e2d0a4 70%, #d8c290);
+  border-radius: 6px;
+  border: 1px solid rgba(90, 66, 30, .55);
+  box-shadow: inset 0 1px 3px rgba(70, 50, 20, .35);
+  text-shadow: none;
+}
+.hand-card .kw-line { white-space: nowrap; font-weight: 700; }
+.hand-card .kw-rule { font-weight: 400; }
+.hand-card.big-card .kw-list { font-size: 7.5px; }
+.hand-card.big-card .kw-line { white-space: normal; text-align: center; }
+/* skill names stay dark ink, just a touch richer than the rule text */
+.hand-card .kw-list .kw-term { color: #5a3d10; }
+
+/* ---------- play reveal (opponent's card, big and center) ---------- */
+.card-reveal {
+  position: fixed;
+  inset: 0;
+  z-index: 940;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,.35), transparent 65%);
+}
+.card-reveal-inner {
+  position: relative;
+  width: calc(var(--hand-card-w, 140px) * 1.7);
+  height: calc(var(--hand-card-h, 204px) * 1.7);
+  filter: drop-shadow(0 18px 44px rgba(0,0,0,.7));
+}
+.card-reveal-inner .big-card {
+  position: absolute;
+  top: 0; left: 0;
+  width: var(--hand-card-w, 140px);
+  height: var(--hand-card-h, 204px);
+  transform: scale(1.7);
+  transform-origin: top left;
+  margin: 0;
+  flex: none;
+}
+
+/* ---------- hero death: rattle, then FX.heroDeath shatters the panel
+   into flying shard-clones (the overlay waits for it) ---------- */
+.side-panel.hero-dying {
+  animation: hero-rattle .45s ease-in;
+  z-index: 5;
+}
+@keyframes hero-rattle {
+  0%   { transform: none; }
+  18%  { transform: translate(-6px, 2px) rotate(-2deg); }
+  36%  { transform: translate(6px, -2px) rotate(2deg); filter: saturate(.8); }
+  54%  { transform: translate(-5px, -2px) rotate(-1.5deg); }
+  72%  { transform: translate(5px, 2px) rotate(1.5deg); filter: saturate(.6) brightness(.9); }
+  100% { transform: none; filter: saturate(.5) brightness(.85); }
+}
+
+/* ---------- surrender button ---------- */
+#surrender-btn { padding: 6px 9px; }
+#surrender-btn:hover { border-color: #d64545; color: #ff9d8a; }
+
+/* ---------- emote radial menu + bubbles ---------- */
+#emote-menu {
+  position: fixed;
+  z-index: 960;
+  width: 0; height: 0;
+}
+#emote-menu.hidden { display: none; }
+.emote-opt {
+  position: absolute;
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 21px;
+  background: #241a10;
+  border: 2px solid var(--amber-dim, #6a5320);
+  box-shadow: 0 4px 12px rgba(0,0,0,.55);
+  cursor: pointer;
+  /* fan out in a circle: rotate to the slot, push out, un-rotate the face */
+  transform:
+    translate(-50%, -50%)
+    rotate(calc(var(--i) * (360deg / var(--n)) - 90deg))
+    translate(62px)
+    rotate(calc(90deg - var(--i) * (360deg / var(--n))));
+  animation: emote-opt-in .18s ease-out backwards;
+  animation-delay: calc(var(--i) * 0.03s);
+}
+.emote-opt:hover { border-color: var(--amber, #ffb300); transform:
+    translate(-50%, -50%)
+    rotate(calc(var(--i) * (360deg / var(--n)) - 90deg))
+    translate(62px)
+    rotate(calc(90deg - var(--i) * (360deg / var(--n))))
+    scale(1.18); }
+@keyframes emote-opt-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.emote-bubble {
+  position: fixed;
+  z-index: 950;
+  transform: translateY(-50%);
+  font-size: 32px;
+  line-height: 1;
+  background: #241a10;
+  border: 2px solid var(--amber-dim, #6a5320);
+  border-radius: 14px 14px 14px 3px;
+  padding: 9px 11px;
+  box-shadow: 0 6px 18px rgba(0,0,0,.55);
+  pointer-events: none;
+  animation: emote-pop 2.4s ease forwards;
+}
+@keyframes emote-pop {
+  0%   { transform: translateY(-50%) scale(0); opacity: 0; }
+  10%  { transform: translateY(-50%) scale(1.18); opacity: 1; }
+  16%  { transform: translateY(-50%) scale(1); }
+  82%  { opacity: 1; }
+  100% { transform: translateY(-52%) scale(.92); opacity: 0; }
+}

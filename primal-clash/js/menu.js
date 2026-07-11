@@ -128,6 +128,112 @@ function updateMenuInfo() {
   if (note) note.classList.add('screen-hidden');
 }
 
+/* ---------- Sandbox mode (testing playground) ----------
+   Infinite amber for you, a conjure-any-card panel (🧪 Cards in the
+   topbar), and cheat buttons to boost the AI. The AI itself plays its
+   normal game. Results are never recorded. */
+let sbTarget = 0;   // who receives conjured cards: 0 = you, 1 = the AI
+let sbQuery = '';
+
+function sbMsg(text) {
+  if (typeof document === 'undefined') return;
+  const el = document.getElementById('sb-msg');
+  if (el) el.textContent = text || '';
+}
+
+function renderSbCards() {
+  const el = document.getElementById('sb-cards');
+  if (!el) return;
+  el.innerHTML = '';
+  const list = CARD_POOL.filter((tpl) => {
+    if (!sbQuery) return true;
+    return [tpl.name, tpl.type, tpl.tribe || '', tpl.era || '', (tpl.abilities || []).join(' ')]
+      .join(' ').toLowerCase().includes(sbQuery);
+  });
+  const order = { creature: 0, event: 1, biome: 2 };
+  list.sort((a, b) => order[a.type] - order[b.type] || a.cost - b.cost || a.name.localeCompare(b.name));
+  for (const tpl of list) {
+    const d = document.createElement('button');
+    d.type = 'button';
+    d.className = 'sb-card';
+    d.title = `${tpl.name} (${tpl.cost} amber) — add to ${sbTarget === 0 ? 'your' : "the AI's"} hand`;
+    d.innerHTML = `<span class="sb-cost">${tpl.cost}</span>` +
+      artHTML(tpl.id, tpl.type === 'creature' ? TRIBE_ICONS[tpl.tribe] : tpl.icon, 'sb-art') +
+      `<span class="sb-name">${tpl.name}</span>`;
+    d.addEventListener('click', () => sbGiveCard(tpl));
+    el.appendChild(d);
+  }
+  if (!list.length) el.innerHTML = '<div class="db-no-results">No cards match.</div>';
+}
+
+function sbGiveCard(tpl) {
+  if (!G || !G.sandbox || G.over) return;
+  const p = G.players[sbTarget];
+  if (p.hand.length >= 10) {
+    sbMsg(`${sbTarget === 0 ? 'Your' : "The AI's"} hand is full (10 cards).`);
+    return;
+  }
+  const hc = makeHandCard(tpl);
+  if (sbTarget === 0) hc._drawn = true;
+  p.hand.push(hc);
+  sbMsg(`${tpl.name} → ${sbTarget === 0 ? 'your' : "the AI's"} hand.`);
+  log(`🧪 ${tpl.name} conjured into ${sbTarget === 0 ? 'your' : "the AI's"} hand.`);
+  render();
+}
+
+function initSandboxUI() {
+  const $id = (i) => document.getElementById(i);
+  if (!$id('sandbox-panel')) return;
+
+  $id('sandbox-menu-btn').addEventListener('click', () => {
+    NET.guardLeave(() => {
+      showScreen('app');
+      newGame({ sandbox: true });
+    });
+  });
+  $id('sandbox-btn').addEventListener('click', () => {
+    if (!G || !G.sandbox) return;
+    sbMsg('');
+    renderSbCards();
+    $id('sandbox-panel').classList.remove('hidden');
+  });
+  $id('sb-close').addEventListener('click', () => $id('sandbox-panel').classList.add('hidden'));
+  $id('sandbox-panel').addEventListener('click', (ev) => {
+    if (ev.target === $id('sandbox-panel')) $id('sandbox-panel').classList.add('hidden');
+  });
+
+  const setTarget = (t) => {
+    sbTarget = t;
+    $id('sb-target-you').classList.toggle('on', t === 0);
+    $id('sb-target-ai').classList.toggle('on', t === 1);
+    renderSbCards();
+  };
+  $id('sb-target-you').addEventListener('click', () => setTarget(0));
+  $id('sb-target-ai').addEventListener('click', () => setTarget(1));
+
+  $id('sb-search').addEventListener('input', (ev) => {
+    sbQuery = ev.target.value.trim().toLowerCase();
+    renderSbCards();
+  });
+
+  $id('sb-ai-amber').addEventListener('click', () => {
+    if (!G || !G.sandbox || G.over) return;
+    const ai = G.players[1];
+    ai.maxAmber = Math.min(10, ai.maxAmber + 3);
+    ai.amber = Math.min(ai.maxAmber, ai.amber + 3);
+    sbMsg(`AI amber: ${ai.amber}/${ai.maxAmber}.`);
+    log('🧪 The AI is granted extra amber.');
+    render();
+  });
+  $id('sb-ai-draw').addEventListener('click', () => {
+    if (!G || !G.sandbox || G.over) return;
+    drawCards(G.players[1], 2);
+    sbMsg('The AI drew 2 cards.');
+    log('🧪 The AI draws 2 extra cards.');
+    render();
+  });
+}
+
 function quitGame() {
   window.close();
   /* Browsers usually block window.close() for tabs the script didn't open. */
@@ -175,6 +281,7 @@ function initMenus() {
   });
 
   initSaveUI();
+  initSandboxUI();
   applySavedSettings();
   DB.init();
   showScreen('main-menu');

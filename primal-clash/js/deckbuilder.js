@@ -23,7 +23,6 @@ const DB = (() => {
     Aquatic: 'ocean sea water marine fish',
     Arthropod: 'insect bug scorpion spider',
     Reptile: 'dinosaur dino lizard scaly',
-    Bird: 'avian feather',
     Mammal: 'fur furry beast',
   };
 
@@ -206,13 +205,16 @@ const DB = (() => {
     d.className = `creature ctype-creature db-pool-card era-${tpl.era.toLowerCase()} tribe-${tpl.tribe.toLowerCase()}`;
     for (const a of tpl.abilities) d.classList.add('kw-' + a);
     if (tpl.legendary) d.classList.add('legendary');
+    const kws = keywordChips(tpl.abilities);
     const ruleHTML = [
-      tpl.onSummon ? `<b>On Summon:</b> ${tpl.onSummon.text}` : '',
-      tpl.ability ? tpl.ability.text : '',
+      kws,
+      tpl.onSummon ? `<b>On Summon:</b> ${linkifyKeywords(tpl.onSummon.text)}` : '',
+      tpl.ability ? linkifyKeywords(tpl.ability.text) : '',
     ].filter(Boolean).join('<br>');
     if (ruleHTML) d.classList.add('has-ability');
     d.innerHTML = `
       ${tpl.legendary ? '<div class="legendary-frame"></div><div class="lg-star">★</div>' : ''}
+      ${emblemsHTML(tpl.abilities)}
       ${artHTML(tpl.id, TRIBE_ICONS[tpl.tribe], 'c-art')}
       <div class="c-title">
         <div class="stat-badge stat-atk" title="Attack">${tpl.atk}</div>
@@ -226,15 +228,16 @@ const DB = (() => {
     return d;
   }
 
-  /* Pool event/biome — rendered like the full hand card. */
+  /* Pool event/biome — rendered like the full hand card. Quick events get
+     the same amber "quick-event" dress they wear in hand. */
   function poolSpellEl(tpl) {
     const d = document.createElement('div');
-    d.className = `hand-card ctype-${tpl.type} db-pool-card era-none`;
+    d.className = `hand-card ctype-${tpl.type} db-pool-card era-none${tpl.type === 'event' && tpl.quick ? ' quick-event' : ''}`;
     d.innerHTML = `
       <div class="cost" title="Amber cost">${tpl.cost}</div>
-      ${artHTML(tpl.id, tpl.icon, tpl.type === 'event' ? 'card-art sigil' : 'biome-vista')}
+      ${artHTML(tpl.id, tpl.icon, tpl.type === 'event' ? 'card-art sigil' + (tpl.quick ? ' quick' : '') : 'biome-vista')}
       <div class="card-name">${tpl.name}</div>
-      <div class="card-text">${tpl.text}</div>
+      <div class="card-text">${linkifyKeywords(tpl.text)}</div>
       <div class="card-sub">${tpl.type === 'event' ? '⚡ Event' : '🌍 Biome'}</div>`;
     return d;
   }
@@ -291,7 +294,7 @@ const DB = (() => {
     }
     for (const tpl of rows) {
       const r = document.createElement('div');
-      r.className = `db-row era-${(tpl.era || 'none').toLowerCase()}${tpl.tribe ? ' tribe-' + tpl.tribe.toLowerCase() : ''}`;
+      r.className = `db-row era-${(tpl.era || 'none').toLowerCase()}${tpl.tribe ? ' tribe-' + tpl.tribe.toLowerCase() : ''}${tpl.type === 'event' && tpl.quick ? ' quick-event' : ''}`;
       r.title = 'Click to remove one copy';
       r.innerHTML = `<span class="db-row-cost">${tpl.cost}</span>
         <span class="db-row-name">${tpl.name}</span>
